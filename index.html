@@ -178,16 +178,16 @@
   }
   .badge-origem{background:var(--blue-050); color:var(--blue-dark);}
   .dot{width:7px; height:7px; border-radius:50%; flex:none;}
-  .nivel-1{background:var(--green-050); color:#2C7A1B;}
-  .nivel-1 .dot{background:var(--green);}
-  .nivel-2{background:var(--blue-050); color:var(--blue-dark);}
-  .nivel-2 .dot{background:var(--blue);}
-  .nivel-3{background:var(--amber-050); color:var(--amber);}
-  .nivel-3 .dot{background:var(--amber);}
-  .nivel-4{background:var(--danger-050); color:var(--danger);}
-  .nivel-4 .dot{background:var(--danger);}
-  .nivel-none{background:#F0F0F0; color:var(--ink-faint);}
-  .nivel-none .dot{background:var(--ink-faint);}
+  .status-interesse{background:var(--green-050); color:#2C7A1B;}
+  .status-interesse .dot{background:var(--green);}
+  .status-negociacao{background:var(--blue-050); color:var(--blue-dark);}
+  .status-negociacao .dot{background:var(--blue);}
+  .status-contato{background:var(--amber-050); color:var(--amber);}
+  .status-contato .dot{background:var(--amber);}
+  .status-semretorno{background:#F0F0F0; color:var(--ink-soft);}
+  .status-semretorno .dot{background:var(--ink-faint);}
+  .status-none{background:#F0F0F0; color:var(--ink-faint);}
+  .status-none .dot{background:var(--ink-faint);}
   .actions-cell{display:flex; gap:4px;}
   .icon-btn{
     width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center;
@@ -227,15 +227,15 @@
   .field input:focus, .field textarea:focus, .field select:focus{border-color:var(--blue);}
   .field textarea{resize:vertical; min-height:70px; font-family:inherit;}
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
-  .nivel-picker{display:flex; gap:8px;}
-  .nivel-opt{
-    flex:1; text-align:center; padding:9px 4px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+  .status-picker{display:flex; flex-wrap:wrap; gap:8px;}
+  .status-opt{
+    flex:1 1 calc(50% - 8px); text-align:center; padding:9px 4px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
     font-size:12.5px; font-weight:700; cursor:pointer; color:var(--ink-soft); transition:.12s;
   }
-  .nivel-opt[data-n="1"].active{background:var(--green-050); border-color:var(--green); color:#2C7A1B;}
-  .nivel-opt[data-n="2"].active{background:var(--blue-050); border-color:var(--blue); color:var(--blue-dark);}
-  .nivel-opt[data-n="3"].active{background:var(--amber-050); border-color:var(--amber); color:var(--amber);}
-  .nivel-opt[data-n="4"].active{background:var(--danger-050); border-color:var(--danger); color:var(--danger);}
+  .status-opt[data-s="Demonstrou interesse"].active{background:var(--green-050); border-color:var(--green); color:#2C7A1B;}
+  .status-opt[data-s="Em negociação"].active{background:var(--blue-050); border-color:var(--blue); color:var(--blue-dark);}
+  .status-opt[data-s="Em contato"].active{background:var(--amber-050); border-color:var(--amber); color:var(--amber);}
+  .status-opt[data-s="Sem retorno"].active{background:#F0F0F0; border-color:var(--ink-faint); color:var(--ink-soft);}
 
   .close-x{background:transparent; border:none; cursor:pointer; color:var(--ink-soft); width:30px;height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center;}
   .close-x:hover{background:var(--bg); color:var(--ink);}
@@ -304,19 +304,19 @@
       <div class="stat-sub">Cadastrados até agora</div>
     </div>
     <div class="stat-card">
-      <div class="stat-top"><span class="stat-diamond" style="background:var(--green);"></span><span class="stat-label">Quentes</span></div>
+      <div class="stat-top"><span class="stat-diamond" style="background:var(--green);"></span><span class="stat-label">Demonstrou interesse</span></div>
       <div class="stat-value" id="stat-quente">0</div>
-      <div class="stat-sub">Nível de interesse 1</div>
+      <div class="stat-sub">Leads interessados</div>
     </div>
     <div class="stat-card">
-      <div class="stat-top"><span class="stat-diamond" style="background:var(--amber);"></span><span class="stat-label">Em negociação</span></div>
+      <div class="stat-top"><span class="stat-diamond" style="background:var(--blue);"></span><span class="stat-label">Em negociação</span></div>
       <div class="stat-value" id="stat-negociacao">0</div>
-      <div class="stat-sub">Nível de interesse 2 e 3</div>
+      <div class="stat-sub">Negociação ou em contato</div>
     </div>
     <div class="stat-card">
-      <div class="stat-top"><span class="stat-diamond" style="background:var(--danger);"></span><span class="stat-label">Sem retorno</span></div>
+      <div class="stat-top"><span class="stat-diamond" style="background:var(--ink-faint);"></span><span class="stat-label">Sem retorno</span></div>
       <div class="stat-value" id="stat-perdido">0</div>
-      <div class="stat-sub">Nível de interesse 4</div>
+      <div class="stat-sub">Leads sem retorno</div>
     </div>
   </section>
 
@@ -327,11 +327,11 @@
     </div>
     <select class="filter" id="filter-origem"><option value="">Todas as origens</option></select>
     <select class="filter" id="filter-nivel">
-      <option value="">Todos os níveis</option>
-      <option value="1">1 · Quente</option>
-      <option value="2">2 · Morno</option>
-      <option value="3">3 · Frio</option>
-      <option value="4">4 · Perdido</option>
+      <option value="">Todos os status</option>
+      <option value="Demonstrou interesse">Demonstrou interesse</option>
+      <option value="Em negociação">Em negociação</option>
+      <option value="Em contato">Em contato</option>
+      <option value="Sem retorno">Sem retorno</option>
     </select>
     <div class="spacer"></div>
     <button class="btn btn-outline" id="btn-import">
@@ -359,7 +359,7 @@
             <th data-sort="data_criacao">Conta criada em <span class="sort-arrow">▾</span></th>
             <th data-sort="origem">Origem <span class="sort-arrow">▾</span></th>
             <th>Observações</th>
-            <th data-sort="nivel">Nível <span class="sort-arrow">▾</span></th>
+            <th data-sort="status">Status <span class="sort-arrow">▾</span></th>
             <th style="width:80px;">Ações</th>
           </tr>
         </thead>
@@ -398,7 +398,7 @@
         </div>
         <div class="field">
           <label>Telefone</label>
-          <input type="text" id="f-telefone" placeholder="(00) 00000-0000">
+          <input type="text" id="f-telefone" placeholder="(31) 99845-0619" maxlength="15">
         </div>
       </div>
       <div class="row2">
@@ -417,12 +417,12 @@
         <textarea id="f-obs" placeholder="Anotações sobre o contato..."></textarea>
       </div>
       <div class="field">
-        <label>Nível de interesse</label>
-        <div class="nivel-picker">
-          <div class="nivel-opt" data-n="1">1 · Quente</div>
-          <div class="nivel-opt" data-n="2">2 · Morno</div>
-          <div class="nivel-opt" data-n="3">3 · Frio</div>
-          <div class="nivel-opt" data-n="4">4 · Perdido</div>
+        <label>Status</label>
+        <div class="status-picker">
+          <div class="status-opt" data-s="Demonstrou interesse">Demonstrou interesse</div>
+          <div class="status-opt" data-s="Em negociação">Em negociação</div>
+          <div class="status-opt" data-s="Em contato">Em contato</div>
+          <div class="status-opt" data-s="Sem retorno">Sem retorno</div>
         </div>
       </div>
     </div>
@@ -437,7 +437,7 @@
 
 <script>
 /* ================= SEED DATA (planilha original) ================= */
-const SEED_DATA = [{"nome": "Flávio Gabriel de Oliveira Faria", "email": "flaviogabrielof@gmail.com", "telefone": "(62) 98169-2174", "data_criacao": "2026-07-06", "origem": "FEIRA", "obs": "PG", "nivel": 1}, {"nome": "Eutemir Vaz de Lima", "email": "deaspadilha@hotmail.com", "telefone": "(11) 94377-9960", "data_criacao": "2026-08-02", "origem": "INSTAGRAM", "obs": "PG", "nivel": 1}, {"nome": "Diego Soares", "email": "diegorepresentacoes2007@hotmail.com", "telefone": "(51) 99612-9139", "data_criacao": "2026-08-03", "origem": "", "obs": "PG", "nivel": 2}, {"nome": "Jander Amaro de Oliveira", "email": "janderamaro.rep@gmail.com", "telefone": "(91) 98128-8193", "data_criacao": "", "origem": "FEIRA", "obs": "PG", "nivel": 1}, {"nome": "Luciana", "email": "", "telefone": "(41) 9919-9394", "data_criacao": "", "origem": "CLIENTE ATIVO", "obs": "Falou que vai comprar no inicio de agosto", "nivel": 1}, {"nome": "Daniel Silva Araújo Greco", "email": "dunay@dunay.com.br", "telefone": "(31) 8478-4252", "data_criacao": "", "origem": "DOWLOAD DIRETO", "obs": "Pediu algumas requisições para testar com a equipe, ficou interessado", "nivel": 1}, {"nome": "Willams dos Santos Silva", "email": "willams.shekinah@gmail.com", "telefone": "(83) 98800-7835", "data_criacao": "2026-08-03", "origem": "DOWLOAD DIRETO", "obs": "Falou que esta sem tempo,retornar posteriormente", "nivel": 2}, {"nome": "RUBENS FERNANDO ROMANIOLO", "email": "ROMANIOLO.REP@GMAIL.COM", "telefone": "(43) 99823-2565", "data_criacao": "2026-07-23", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, gostou da ferramente e iria avaliar, sem mais retorno", "nivel": 2}, {"nome": "Marina levy", "email": "marinapintolevy@gmail.com", "telefone": "(31) 98454-9648", "data_criacao": "2026-07-08", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, falou que não funcionou e não tivemos mais retorno", "nivel": 3}, {"nome": "Matheus Pereira coelho", "email": "willymobile@gmail.com", "telefone": "(32) 99853-8477", "data_criacao": "2026-07-08", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito,adquiriu outro sistema completa com dashboards", "nivel": 3}, {"nome": "Heitor Gélio Pazote", "email": "heitorpazote@gmail.com", "telefone": "(17) 99721-6217", "data_criacao": "2026-08-06", "origem": "DOWLOAD DIRETO", "obs": "Retorno feito no Whastapp, falou que não foi intuitivo e reclamou do peso do aplicativo", "nivel": 4}, {"nome": "Marcelo Rocha", "email": "marcelo@marcelocarvalho.com.br", "telefone": "(62) 99972-0336", "data_criacao": "2026-07-30", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, sem retorno", "nivel": 4}, {"nome": "Danilo De Oliveira Barros", "email": "hdkrep@hotmail.com", "telefone": "(71) 99257-3900", "data_criacao": "2026-08-03", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, sem retorno", "nivel": 4}, {"nome": "Eduardo Santos Pires", "email": "eduardopires.vendas@gmail.com", "telefone": "-", "data_criacao": "2026-07-15", "origem": "DOWLOAD DIRETO", "obs": "Sem contato", "nivel": 4}, {"nome": "Thiago da Silva Ribeiro", "email": "thiagoribeiro.21@hotmail.com", "telefone": "-", "data_criacao": "2026-07-21", "origem": "DOWLOAD DIRETO", "obs": "Sem contato", "nivel": 4}, {"nome": "Guilherme", "email": "", "telefone": "(27) 99309-4130", "data_criacao": "", "origem": "FEIRA", "obs": "Vai nos chamar segunda feira para realizar o dowload", "nivel": 1}, {"nome": "Rogério Ribeiro de Carvalho", "email": "representacoesrogerio@gmail.com", "telefone": "(34) 99971-5877", "data_criacao": "2026-08-03", "origem": "FEIRA", "obs": "Falou que vai avaliar", "nivel": 2}, {"nome": "Jorge", "email": "", "telefone": "(47) 99103-1901", "data_criacao": "", "origem": "FEIRA", "obs": "Vai avaliar no proximo mês", "nivel": 2}, {"nome": "Caique", "email": "", "telefone": "(31) 99991-5028", "data_criacao": "", "origem": "INSTAGRAM", "obs": "Em contato, reuniao marcada para segunda dia 10/08", "nivel": 1}, {"nome": "Carlos", "email": "", "telefone": "(47) 9911-9443", "data_criacao": "", "origem": "", "obs": "", "nivel": null}, {"nome": "", "email": "", "telefone": "(31) 99832-6673", "data_criacao": "", "origem": "", "obs": "", "nivel": null}];
+const SEED_DATA = [{"nome": "Flávio Gabriel de Oliveira Faria", "email": "flaviogabrielof@gmail.com", "telefone": "(62) 98169-2174", "data_criacao": "2026-07-06", "origem": "FEIRA", "obs": "PG", "status": "Demonstrou interesse", "ts": 1000}, {"nome": "Eutemir Vaz de Lima", "email": "deaspadilha@hotmail.com", "telefone": "(11) 94377-9960", "data_criacao": "2026-08-02", "origem": "INSTAGRAM", "obs": "PG", "status": "Demonstrou interesse", "ts": 2000}, {"nome": "Diego Soares", "email": "diegorepresentacoes2007@hotmail.com", "telefone": "(51) 99612-9139", "data_criacao": "2026-08-03", "origem": "", "obs": "PG", "status": "Em negociação", "ts": 3000}, {"nome": "Jander Amaro de Oliveira", "email": "janderamaro.rep@gmail.com", "telefone": "(91) 98128-8193", "data_criacao": "", "origem": "FEIRA", "obs": "PG", "status": "Demonstrou interesse", "ts": 4000}, {"nome": "Luciana", "email": "", "telefone": "(41) 9919-9394", "data_criacao": "", "origem": "CLIENTE ATIVO", "obs": "Falou que vai comprar no inicio de agosto", "status": "Demonstrou interesse", "ts": 5000}, {"nome": "Daniel Silva Araújo Greco", "email": "dunay@dunay.com.br", "telefone": "(31) 8478-4252", "data_criacao": "", "origem": "DOWLOAD DIRETO", "obs": "Pediu algumas requisições para testar com a equipe, ficou interessado", "status": "Demonstrou interesse", "ts": 6000}, {"nome": "Willams dos Santos Silva", "email": "willams.shekinah@gmail.com", "telefone": "(83) 98800-7835", "data_criacao": "2026-08-03", "origem": "DOWLOAD DIRETO", "obs": "Falou que esta sem tempo,retornar posteriormente", "status": "Em negociação", "ts": 7000}, {"nome": "RUBENS FERNANDO ROMANIOLO", "email": "ROMANIOLO.REP@GMAIL.COM", "telefone": "(43) 99823-2565", "data_criacao": "2026-07-23", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, gostou da ferramente e iria avaliar, sem mais retorno", "status": "Em negociação", "ts": 8000}, {"nome": "Marina levy", "email": "marinapintolevy@gmail.com", "telefone": "(31) 98454-9648", "data_criacao": "2026-07-08", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, falou que não funcionou e não tivemos mais retorno", "status": "Em contato", "ts": 9000}, {"nome": "Matheus Pereira coelho", "email": "willymobile@gmail.com", "telefone": "(32) 99853-8477", "data_criacao": "2026-07-08", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito,adquiriu outro sistema completa com dashboards", "status": "Em contato", "ts": 10000}, {"nome": "Heitor Gélio Pazote", "email": "heitorpazote@gmail.com", "telefone": "(17) 99721-6217", "data_criacao": "2026-08-06", "origem": "DOWLOAD DIRETO", "obs": "Retorno feito no Whastapp, falou que não foi intuitivo e reclamou do peso do aplicativo", "status": "Sem retorno", "ts": 11000}, {"nome": "Marcelo Rocha", "email": "marcelo@marcelocarvalho.com.br", "telefone": "(62) 99972-0336", "data_criacao": "2026-07-30", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, sem retorno", "status": "Sem retorno", "ts": 12000}, {"nome": "Danilo De Oliveira Barros", "email": "hdkrep@hotmail.com", "telefone": "(71) 99257-3900", "data_criacao": "2026-08-03", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, sem retorno", "status": "Sem retorno", "ts": 13000}, {"nome": "Eduardo Santos Pires", "email": "eduardopires.vendas@gmail.com", "telefone": "-", "data_criacao": "2026-07-15", "origem": "DOWLOAD DIRETO", "obs": "Sem contato", "status": "Sem retorno", "ts": 14000}, {"nome": "Thiago da Silva Ribeiro", "email": "thiagoribeiro.21@hotmail.com", "telefone": "-", "data_criacao": "2026-07-21", "origem": "DOWLOAD DIRETO", "obs": "Sem contato", "status": "Sem retorno", "ts": 15000}, {"nome": "Guilherme", "email": "", "telefone": "(27) 99309-4130", "data_criacao": "", "origem": "FEIRA", "obs": "Vai nos chamar segunda feira para realizar o dowload", "status": "Demonstrou interesse", "ts": 16000}, {"nome": "Rogério Ribeiro de Carvalho", "email": "representacoesrogerio@gmail.com", "telefone": "(34) 99971-5877", "data_criacao": "2026-08-03", "origem": "FEIRA", "obs": "Falou que vai avaliar", "status": "Em negociação", "ts": 17000}, {"nome": "Jorge", "email": "", "telefone": "(47) 99103-1901", "data_criacao": "", "origem": "FEIRA", "obs": "Vai avaliar no proximo mês", "status": "Em negociação", "ts": 18000}, {"nome": "Caique", "email": "", "telefone": "(31) 99991-5028", "data_criacao": "", "origem": "INSTAGRAM", "obs": "Em contato, reuniao marcada para segunda dia 10/08", "status": "Demonstrou interesse", "ts": 19000}, {"nome": "Carlos", "email": "", "telefone": "(47) 9911-9443", "data_criacao": "", "origem": "", "obs": "", "status": null, "ts": 20000}, {"nome": "", "email": "", "telefone": "(31) 99832-6673", "data_criacao": "", "origem": "", "obs": "", "status": null, "ts": 21000}];
 
 /* ================= BANCO DE DADOS COMPARTILHADO (Firestore) =================
    Para que TODAS as pessoas da equipe vejam e editem os mesmos leads,
@@ -476,7 +476,7 @@ let leads = [];
 let db = null;
 let sortState = {col:null, dir:1};
 let editingId = null;
-let selectedNivel = null;
+let selectedStatus = null;
 
 /* ---------------- status visual da conexão ---------------- */
 function setConnStatus(mode){
@@ -510,10 +510,11 @@ function saveLocalData(){
 
 /* ---------------- camada de dados (funciona igual nos dois modos) ---------------- */
 async function addLeadRecord(payload){
+  const withTs = { ...payload, ts: Date.now() };
   if(IS_FIRESTORE_CONFIGURED){
-    await db.collection('leads').add(payload);
+    await db.collection('leads').add(withTs);
   }else{
-    leads.push({ id: crypto.randomUUID(), ...payload });
+    leads.push({ id: crypto.randomUUID(), ...withTs });
     saveLocalData();
     render();
   }
@@ -537,18 +538,20 @@ async function deleteLeadRecord(id){
   }
 }
 async function bulkAddRecords(list){
+  const now = Date.now();
+  const withTs = list.map((item,i)=> ({ ...item, ts: item.ts ?? (now + i) }));
   if(IS_FIRESTORE_CONFIGURED){
     const size = 400;
-    for(let i=0;i<list.length;i+=size){
+    for(let i=0;i<withTs.length;i+=size){
       const batch = db.batch();
-      list.slice(i,i+size).forEach(item=>{
+      withTs.slice(i,i+size).forEach(item=>{
         const ref = db.collection('leads').doc();
         batch.set(ref, item);
       });
       await batch.commit();
     }
   }else{
-    leads = [...leads, ...list.map(d=>({id:crypto.randomUUID(), ...d}))];
+    leads = [...leads, ...withTs.map(d=>({id:crypto.randomUUID(), ...d}))];
     saveLocalData();
     render();
   }
@@ -608,8 +611,24 @@ function fmtDate(iso){
   if(!y||!m||!d) return iso;
   return `${d}/${m}/${y}`;
 }
-function nivelLabel(n){
-  return {1:'Quente',2:'Morno',3:'Frio',4:'Perdido'}[n] || 'N/D';
+const STATUS_CLASS = {
+  'Demonstrou interesse':'status-interesse',
+  'Em negociação':'status-negociacao',
+  'Em contato':'status-contato',
+  'Sem retorno':'status-semretorno'
+};
+function maskPhone(value){
+  let v = value.replace(/\D/g,'').slice(0,11);
+  if(v.length > 10){
+    v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  }else if(v.length > 6){
+    v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+  }else if(v.length > 2){
+    v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+  }else if(v.length > 0){
+    v = v.replace(/(\d{0,2})/, '($1');
+  }
+  return v;
 }
 function toast(msg, type='ok'){
   const el = document.createElement('div');
@@ -632,10 +651,10 @@ function populateOrigemFilter(){
 function getFiltered(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const fOrigem = document.getElementById('filter-origem').value;
-  const fNivel = document.getElementById('filter-nivel').value;
+  const fStatus = document.getElementById('filter-nivel').value;
   let out = leads.filter(l=>{
     if(fOrigem && l.origem !== fOrigem) return false;
-    if(fNivel && String(l.nivel) !== fNivel) return false;
+    if(fStatus && l.status !== fStatus) return false;
     if(q){
       const hay = `${l.nome} ${l.email} ${l.telefone}`.toLowerCase();
       if(!hay.includes(q)) return false;
@@ -646,11 +665,13 @@ function getFiltered(){
     out.sort((a,b)=>{
       let va = a[sortState.col] ?? '';
       let vb = b[sortState.col] ?? '';
-      if(sortState.col === 'nivel'){ va = va || 99; vb = vb || 99; }
       if(va < vb) return -1*sortState.dir;
       if(va > vb) return 1*sortState.dir;
       return 0;
     });
+  }else{
+    // Padrão: sempre mostra o último lead adicionado primeiro
+    out.sort((a,b)=> (b.ts||0) - (a.ts||0));
   }
   return out;
 }
@@ -665,7 +686,7 @@ function render(){
 
   filtered.forEach(l=>{
     const tr = document.createElement('tr');
-    const nivelClass = l.nivel ? `nivel-${l.nivel}` : 'nivel-none';
+    const statusClass = l.status ? (STATUS_CLASS[l.status] || 'status-none') : 'status-none';
     tr.innerHTML = `
       <td class="cell-name">${l.nome || '—'}</td>
       <td class="cell-contact">
@@ -675,7 +696,7 @@ function render(){
       <td>${fmtDate(l.data_criacao)}</td>
       <td>${l.origem ? `<span class="badge badge-origem">${l.origem}</span>` : '—'}</td>
       <td class="cell-obs" title="${(l.obs||'').replace(/"/g,'&quot;')}">${l.obs || '—'}</td>
-      <td><span class="badge ${nivelClass}"><span class="dot"></span>${l.nivel ? l.nivel+' · '+nivelLabel(l.nivel) : 'N/D'}</span></td>
+      <td><span class="badge ${statusClass}"><span class="dot"></span>${l.status || 'N/D'}</span></td>
       <td>
         <div class="actions-cell">
           <button class="icon-btn" data-edit="${l.id}" title="Editar">
@@ -690,9 +711,9 @@ function render(){
   });
 
   document.getElementById('stat-total').textContent = leads.length;
-  document.getElementById('stat-quente').textContent = leads.filter(l=>l.nivel===1).length;
-  document.getElementById('stat-negociacao').textContent = leads.filter(l=>l.nivel===2||l.nivel===3).length;
-  document.getElementById('stat-perdido').textContent = leads.filter(l=>l.nivel===4).length;
+  document.getElementById('stat-quente').textContent = leads.filter(l=>l.status==='Demonstrou interesse').length;
+  document.getElementById('stat-negociacao').textContent = leads.filter(l=>l.status==='Em negociação'||l.status==='Em contato').length;
+  document.getElementById('stat-perdido').textContent = leads.filter(l=>l.status==='Sem retorno').length;
 }
 
 /* ================= MODAL ================= */
@@ -706,23 +727,26 @@ function openModal(lead){
   document.getElementById('f-data').value = lead?.data_criacao || '';
   document.getElementById('f-origem').value = lead?.origem || '';
   document.getElementById('f-obs').value = lead?.obs || '';
-  selectedNivel = lead?.nivel || null;
-  updateNivelPicker();
+  selectedStatus = lead?.status || null;
+  updateStatusPicker();
   overlay.classList.add('open');
   document.getElementById('f-nome').focus();
 }
 function closeModal(){ overlay.classList.remove('open'); }
-function updateNivelPicker(){
-  document.querySelectorAll('.nivel-opt').forEach(el=>{
-    el.classList.toggle('active', Number(el.dataset.n) === selectedNivel);
+function updateStatusPicker(){
+  document.querySelectorAll('.status-opt').forEach(el=>{
+    el.classList.toggle('active', el.dataset.s === selectedStatus);
   });
 }
-document.querySelectorAll('.nivel-opt').forEach(el=>{
+document.querySelectorAll('.status-opt').forEach(el=>{
   el.addEventListener('click', ()=>{
-    const n = Number(el.dataset.n);
-    selectedNivel = (selectedNivel === n) ? null : n;
-    updateNivelPicker();
+    const s = el.dataset.s;
+    selectedStatus = (selectedStatus === s) ? null : s;
+    updateStatusPicker();
   });
+});
+document.getElementById('f-telefone').addEventListener('input', (e)=>{
+  e.target.value = maskPhone(e.target.value);
 });
 
 document.getElementById('btn-new').addEventListener('click', ()=>openModal(null));
@@ -740,7 +764,7 @@ document.getElementById('btn-save').addEventListener('click', async ()=>{
     data_criacao: document.getElementById('f-data').value,
     origem: document.getElementById('f-origem').value.trim(),
     obs: document.getElementById('f-obs').value.trim(),
-    nivel: selectedNivel
+    status: selectedStatus
   };
   const saveBtn = document.getElementById('btn-save');
   saveBtn.disabled = true;
@@ -799,7 +823,7 @@ document.getElementById('btn-export').addEventListener('click', ()=>{
     'CONTA CRIADA EM': l.data_criacao ? fmtDate(l.data_criacao) : '',
     'ORIGEM': l.origem || '',
     'OBS': l.obs || '',
-    'NIVEL DE INTERESSE': l.nivel || ''
+    'STATUS': l.status || ''
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [{wch:30},{wch:30},{wch:18},{wch:16},{wch:16},{wch:45},{wch:16}];
@@ -835,7 +859,9 @@ document.getElementById('file-import').addEventListener('change', (e)=>{
         }else if(typeof dataVal === 'string'){
           isoDate = dataVal;
         }
-        const nivelRaw = get('NIVEL DE INTERESSE','Nivel De Interesse','NÍVEL DE INTERESSE');
+        const oldNivelMap = {'1':'Demonstrou interesse','2':'Em negociação','3':'Em contato','4':'Sem retorno'};
+        const statusRaw = String(get('STATUS','Status')||'').trim();
+        const nivelRaw = String(get('NIVEL DE INTERESSE','Nivel De Interesse','NÍVEL DE INTERESSE')||'').trim();
         return {
           id: crypto.randomUUID(),
           nome: String(get('USUÁRIO','USUARIO','Usuário')||'').trim(),
@@ -844,7 +870,7 @@ document.getElementById('file-import').addEventListener('change', (e)=>{
           data_criacao: isoDate,
           origem: String(get('ORIGEM','Origem')||'').trim(),
           obs: String(get('OBS','Obs','Observações')||'').trim(),
-          nivel: nivelRaw ? Number(nivelRaw) : null
+          status: statusRaw || oldNivelMap[nivelRaw] || null
         };
       }).filter(l=>l.nome || l.email || l.telefone);
 
