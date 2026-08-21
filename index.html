@@ -89,7 +89,7 @@
   .page-head p{margin:0; color:var(--ink-soft); font-size:14.5px;}
 
   /* ---------- Stat cards ---------- */
-  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px;}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:16px; margin-bottom:28px;}
   .stat-card{
     background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg);
     padding:20px 20px 18px; box-shadow:var(--shadow-sm);
@@ -186,6 +186,8 @@
   .status-contato .dot{background:var(--amber);}
   .status-semretorno{background:#F0F0F0; color:var(--ink-soft);}
   .status-semretorno .dot{background:var(--ink-faint);}
+  .status-vendafinalizada{background:var(--green); color:#fff;}
+  .status-vendafinalizada .dot{background:#fff;}
   .status-none{background:#F0F0F0; color:var(--ink-faint);}
   .status-none .dot{background:var(--ink-faint);}
   .actions-cell{display:flex; gap:4px;}
@@ -236,6 +238,7 @@
   .status-opt[data-s="Em negociação"].active{background:var(--blue-050); border-color:var(--blue); color:var(--blue-dark);}
   .status-opt[data-s="Em contato"].active{background:var(--amber-050); border-color:var(--amber); color:var(--amber);}
   .status-opt[data-s="Sem retorno"].active{background:#F0F0F0; border-color:var(--ink-faint); color:var(--ink-soft);}
+  .status-opt[data-s="Venda Finalizada"].active{background:var(--green); border-color:var(--green); color:#fff;}
 
   .close-x{background:transparent; border:none; cursor:pointer; color:var(--ink-soft); width:30px;height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center;}
   .close-x:hover{background:var(--bg); color:var(--ink);}
@@ -253,7 +256,7 @@
   footer{text-align:center; padding:26px; color:var(--ink-faint); font-size:12px;}
 
   @media (max-width:900px){
-    .stats{grid-template-columns:repeat(2,1fr);}
+    .stats{grid-template-columns:repeat(2, minmax(0,1fr));}
   }
   @media (max-width:760px){
     .topbar-inner{padding:12px 14px; flex-wrap:wrap; row-gap:8px;}
@@ -318,8 +321,7 @@
 <main>
   <div class="page-head">
     <div>
-      <h1>Leads · Tráfego Pago</h1>
-      <p>Acompanhe, qualifique e organize todos os contatos recebidos em um só lugar.</p>
+      <h1>Leads</h1>
     </div>
   </div>
 
@@ -344,6 +346,11 @@
       <div class="stat-value" id="stat-perdido">0</div>
       <div class="stat-sub">Leads sem retorno</div>
     </div>
+    <div class="stat-card">
+      <div class="stat-top"><span class="stat-diamond" style="background:var(--green);"></span><span class="stat-label">Venda Finalizada</span></div>
+      <div class="stat-value" id="stat-venda">0</div>
+      <div class="stat-sub">Negócios fechados</div>
+    </div>
   </section>
 
   <div class="toolbar">
@@ -358,6 +365,7 @@
       <option value="Em negociação">Em negociação</option>
       <option value="Em contato">Em contato</option>
       <option value="Sem retorno">Sem retorno</option>
+      <option value="Venda Finalizada">Venda Finalizada</option>
     </select>
     <div class="spacer"></div>
     <button class="btn btn-outline" id="btn-import">
@@ -449,6 +457,7 @@
           <div class="status-opt" data-s="Em negociação">Em negociação</div>
           <div class="status-opt" data-s="Em contato">Em contato</div>
           <div class="status-opt" data-s="Sem retorno">Sem retorno</div>
+          <div class="status-opt" data-s="Venda Finalizada">Venda Finalizada</div>
         </div>
       </div>
     </div>
@@ -510,7 +519,7 @@ function setConnStatus(mode){
   const text = document.getElementById('conn-text');
   if(mode === 'shared'){
     dot.style.background = 'var(--green)';
-    text.textContent = 'Conectado · dados compartilhados em tempo real';
+    text.textContent = 'Ativação Tec & Sga Soft';
   }else if(mode === 'error'){
     dot.style.background = 'var(--danger)';
     text.textContent = 'Erro ao conectar ao banco (veja o console)';
@@ -641,7 +650,8 @@ const STATUS_CLASS = {
   'Demonstrou interesse':'status-interesse',
   'Em negociação':'status-negociacao',
   'Em contato':'status-contato',
-  'Sem retorno':'status-semretorno'
+  'Sem retorno':'status-semretorno',
+  'Venda Finalizada':'status-vendafinalizada'
 };
 function maskPhone(value){
   let v = value.replace(/\D/g,'').slice(0,11);
@@ -740,6 +750,7 @@ function render(){
   document.getElementById('stat-quente').textContent = leads.filter(l=>l.status==='Demonstrou interesse').length;
   document.getElementById('stat-negociacao').textContent = leads.filter(l=>l.status==='Em negociação'||l.status==='Em contato').length;
   document.getElementById('stat-perdido').textContent = leads.filter(l=>l.status==='Sem retorno').length;
+  document.getElementById('stat-venda').textContent = leads.filter(l=>l.status==='Venda Finalizada').length;
 }
 
 /* ================= MODAL ================= */
