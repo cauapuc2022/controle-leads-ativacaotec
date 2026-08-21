@@ -255,12 +255,38 @@
   @media (max-width:900px){
     .stats{grid-template-columns:repeat(2,1fr);}
   }
-  @media (max-width:640px){
-    .topbar-inner{padding:14px 16px;}
+  @media (max-width:760px){
+    .topbar-inner{padding:12px 14px; flex-wrap:wrap; row-gap:8px;}
+    .brand{gap:10px;}
+    .brand img{height:28px;}
+    .brand-divider{display:none;}
+    .brand-text span{display:none;}
     .powered{display:none;}
-    main{padding:20px 14px 60px;}
+    .header-right{flex-direction:row; align-items:center; width:100%; justify-content:flex-end; gap:8px;}
+    .conn-badge{font-size:11px; padding:4px 9px 4px 7px;}
+    main{padding:18px 14px 60px;}
     .stats{grid-template-columns:1fr 1fr; gap:10px;}
+    .stat-card{padding:16px 14px 14px;}
+    .stat-value{font-size:23px;}
     .row2{grid-template-columns:1fr;}
+
+    /* A tabela vira uma lista de cards no celular, para não cortar colunas */
+    .table-scroll{overflow-x:visible;}
+    table{min-width:0; width:100%;}
+    thead{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+    tbody, tr, td{display:block; width:100%;}
+    tr{border-bottom:8px solid var(--bg); padding:14px 16px;}
+    tr:last-child{border-bottom:none;}
+    tr:hover{background:none;}
+    td{border:none; padding:7px 0; font-size:13.5px; max-width:none; white-space:normal;}
+    td[data-label]::before{
+      content: attr(data-label);
+      display:block;
+      font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+      color:var(--ink-faint); margin-bottom:3px;
+    }
+    .cell-obs{-webkit-line-clamp:unset; display:block; max-width:none; white-space:normal;}
+    .actions-cell{justify-content:flex-end;}
   }
 </style>
 </head>
@@ -688,16 +714,16 @@ function render(){
     const tr = document.createElement('tr');
     const statusClass = l.status ? (STATUS_CLASS[l.status] || 'status-none') : 'status-none';
     tr.innerHTML = `
-      <td class="cell-name">${l.nome || '—'}</td>
-      <td class="cell-contact">
+      <td class="cell-name" data-label="Usuário">${l.nome || '—'}</td>
+      <td class="cell-contact" data-label="Contato">
         ${l.email ? `<span class="email">${l.email}</span>` : ''}
         ${l.telefone || ''}
       </td>
-      <td>${fmtDate(l.data_criacao)}</td>
-      <td>${l.origem ? `<span class="badge badge-origem">${l.origem}</span>` : '—'}</td>
-      <td class="cell-obs" title="${(l.obs||'').replace(/"/g,'&quot;')}">${l.obs || '—'}</td>
-      <td><span class="badge ${statusClass}"><span class="dot"></span>${l.status || 'N/D'}</span></td>
-      <td>
+      <td data-label="Criado em">${fmtDate(l.data_criacao)}</td>
+      <td data-label="Origem">${l.origem ? `<span class="badge badge-origem">${l.origem}</span>` : '—'}</td>
+      <td class="cell-obs" data-label="Observações" title="${(l.obs||'').replace(/"/g,'&quot;')}">${l.obs || '—'}</td>
+      <td data-label="Status"><span class="badge ${statusClass}"><span class="dot"></span>${l.status || 'N/D'}</span></td>
+      <td data-label="Ações">
         <div class="actions-cell">
           <button class="icon-btn" data-edit="${l.id}" title="Editar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
