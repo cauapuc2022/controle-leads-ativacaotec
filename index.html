@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ativação Tec · Gestão de Leads</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='20' width='60' height='60' rx='10' fill='%231876D0' transform='rotate(45 50 50)'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --blue:#1876D0;
+    --blue-dark:#125A9C;
+    --blue-050:#EAF3FC;
+    --green:#41A827;
+    --green-050:#EBF6E7;
+    --ink:#3C3C3C;
+    --ink-soft:#75757A;
+    --ink-faint:#A6A6AA;
+    --bg:#F4F4F4;
+    --white:#FFFFFF;
+    --border:#E4E4E7;
+    --danger:#B3261E;
+    --danger-050:#FBEAE9;
+    --amber:#B9861E;
+    --amber-050:#FBF3E5;
+    --radius-lg:16px;
+    --radius-md:10px;
+    --radius-sm:7px;
+    --shadow-sm: 0 1px 2px rgba(60,60,60,.05);
+    --shadow-md: 0 6px 20px -6px rgba(60,60,60,.14), 0 1px 2px rgba(60,60,60,.06);
+    --shadow-lg: 0 24px 60px -12px rgba(24,118,208,.18), 0 2px 6px rgba(60,60,60,.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  a{color:inherit;}
+
+  /* ---------- Header ---------- */
+  header.topbar{
+    position:sticky; top:0; z-index:40;
+    background:var(--white);
+    border-bottom:1px solid var(--border);
+  }
+  .topbar-inner{
+    max-width:1360px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 28px;
+    gap:20px;
+  }
+  .brand{display:flex; align-items:center; gap:14px;}
+  .brand img{height:34px; display:block;}
+  .brand-divider{width:1px; height:28px; background:var(--border);}
+  .brand-text{display:flex; flex-direction:column; line-height:1.15;}
+  .brand-text b{font-size:14.5px; font-weight:700; color:var(--ink);}
+  .brand-text span{font-size:12px; color:var(--ink-soft); font-weight:500;}
+  .powered{
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; color:var(--ink-faint); font-weight:600;
+    letter-spacing:.02em;
+  }
+  .powered svg{width:14px;height:14px;color:var(--green);}
+  .header-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
+  .conn-badge{
+    display:flex; align-items:center; gap:7px;
+    font-size:11.5px; font-weight:600; color:var(--ink-soft);
+    background:var(--bg); border:1px solid var(--border); border-radius:999px;
+    padding:4px 10px 4px 8px;
+  }
+  .conn-badge .conn-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--ink-faint); flex:none;
+    transition:background .2s;
+  }
+
+  /* ---------- Page ---------- */
+  main{max-width:1360px; margin:0 auto; padding:32px 28px 80px;}
+  .page-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:26px; flex-wrap:wrap;}
+  .page-head h1{font-size:26px; font-weight:800; margin:0 0 4px; letter-spacing:-.02em;}
+  .page-head p{margin:0; color:var(--ink-soft); font-size:14.5px;}
+
+  /* ---------- Stat cards ---------- */
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px;}
+  .stat-card{
+    background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:20px 20px 18px; box-shadow:var(--shadow-sm);
+    display:flex; flex-direction:column; gap:10px;
+    position:relative; overflow:hidden;
+  }
+  .stat-top{display:flex; align-items:center; gap:10px;}
+  .stat-diamond{
+    width:11px; height:11px; border-radius:2px; flex:none;
+    transform:rotate(45deg);
+  }
+  .stat-label{font-size:12.5px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
+  .stat-value{font-size:30px; font-weight:800; letter-spacing:-.02em;}
+  .stat-sub{font-size:12.5px; color:var(--ink-faint); font-weight:500;}
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    margin-bottom:16px;
+  }
+  .search-box{
+    display:flex; align-items:center; gap:8px;
+    background:var(--white); border:1px solid var(--border); border-radius:var(--radius-md);
+    padding:0 12px; height:40px; min-width:250px; flex:1 1 250px;
+  }
+  .search-box svg{width:16px;height:16px;color:var(--ink-faint); flex:none;}
+  .search-box input{
+    border:none; outline:none; font:inherit; font-size:14px; width:100%; height:100%;
+    background:transparent; color:var(--ink);
+  }
+  select.filter{
+    height:40px; border:1px solid var(--border); border-radius:var(--radius-md);
+    background:var(--white); color:var(--ink); font:inherit; font-size:13.5px; font-weight:500;
+    padding:0 30px 0 12px; cursor:pointer;
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2375757A' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 12px center;
+  }
+  .spacer{flex:1;}
+  .btn{
+    display:inline-flex; align-items:center; gap:7px; justify-content:center;
+    height:40px; padding:0 16px; border-radius:var(--radius-md);
+    font:inherit; font-size:13.5px; font-weight:600; cursor:pointer;
+    border:1px solid transparent; white-space:nowrap; transition:filter .12s, transform .05s;
+  }
+  .btn svg{width:15px;height:15px;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--blue); color:#fff;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-outline{background:var(--white); color:var(--ink); border-color:var(--border);}
+  .btn-outline:hover{background:#FAFAFA;}
+  .btn-green{background:var(--green); color:#fff;}
+  .btn-green:hover{filter:brightness(1.06);}
+  .btn-ghost{background:transparent; color:var(--ink-soft); border-color:transparent; height:34px; padding:0 10px;}
+  .btn-ghost:hover{background:var(--bg); color:var(--ink);}
+
+  /* ---------- Table card ---------- */
+  .table-card{
+    background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-sm); overflow:hidden;
+  }
+  .table-scroll{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; min-width:980px;}
+  thead th{
+    text-align:left; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-soft); background:#FAFAFA; padding:13px 16px; border-bottom:1px solid var(--border);
+    white-space:nowrap; cursor:pointer; user-select:none;
+  }
+  thead th:hover{color:var(--ink);}
+  thead th .sort-arrow{opacity:.35; margin-left:4px; font-size:10px;}
+  tbody td{
+    padding:13px 16px; border-bottom:1px solid var(--border); font-size:13.8px; vertical-align:top;
+    color:var(--ink);
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr{transition:background .1s;}
+  tbody tr:hover{background:var(--blue-050);}
+  .cell-name{font-weight:650;}
+  .cell-contact{color:var(--ink-soft); font-size:12.8px; line-height:1.5;}
+  .cell-contact .email{color:var(--ink); font-weight:500; display:block;}
+  .cell-obs{max-width:280px; color:var(--ink-soft); font-size:13px; line-height:1.4;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .badge{
+    display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700;
+    padding:4px 10px; border-radius:999px; white-space:nowrap; letter-spacing:.02em;
+  }
+  .badge-origem{background:var(--blue-050); color:var(--blue-dark);}
+  .dot{width:7px; height:7px; border-radius:50%; flex:none;}
+  .nivel-1{background:var(--green-050); color:#2C7A1B;}
+  .nivel-1 .dot{background:var(--green);}
+  .nivel-2{background:var(--blue-050); color:var(--blue-dark);}
+  .nivel-2 .dot{background:var(--blue);}
+  .nivel-3{background:var(--amber-050); color:var(--amber);}
+  .nivel-3 .dot{background:var(--amber);}
+  .nivel-4{background:var(--danger-050); color:var(--danger);}
+  .nivel-4 .dot{background:var(--danger);}
+  .nivel-none{background:#F0F0F0; color:var(--ink-faint);}
+  .nivel-none .dot{background:var(--ink-faint);}
+  .actions-cell{display:flex; gap:4px;}
+  .icon-btn{
+    width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center;
+    border-radius:8px; border:1px solid transparent; background:transparent; cursor:pointer; color:var(--ink-soft);
+  }
+  .icon-btn svg{width:15px;height:15px;}
+  .icon-btn:hover{background:var(--bg); color:var(--ink);}
+  .icon-btn.danger:hover{background:var(--danger-050); color:var(--danger);}
+
+  .empty-state{padding:60px 20px; text-align:center; color:var(--ink-faint);}
+  .empty-state svg{width:40px;height:40px; margin-bottom:12px; color:var(--ink-faint);}
+  .empty-state b{display:block; color:var(--ink-soft); font-size:15px; margin-bottom:4px;}
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(60,60,60,.45); backdrop-filter:blur(2px);
+    display:none; align-items:flex-start; justify-content:center; z-index:100; padding:5vh 16px;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--white); border-radius:var(--radius-lg); width:100%; max-width:560px;
+    box-shadow:var(--shadow-lg); animation:pop .16s ease-out;
+    max-height:90vh; display:flex; flex-direction:column;
+  }
+  @keyframes pop{from{opacity:0; transform:translateY(6px) scale(.98);} to{opacity:1; transform:none;}}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:20px 22px; border-bottom:1px solid var(--border);}
+  .modal-head h2{font-size:17px; margin:0; font-weight:700;}
+  .modal-body{padding:20px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:16px;}
+  .modal-foot{padding:16px 22px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px;}
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:12.5px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;}
+  .field input, .field textarea, .field select{
+    border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px;
+    font:inherit; font-size:14px; color:var(--ink); outline:none; background:var(--white);
+    transition:border-color .12s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{border-color:var(--blue);}
+  .field textarea{resize:vertical; min-height:70px; font-family:inherit;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .nivel-picker{display:flex; gap:8px;}
+  .nivel-opt{
+    flex:1; text-align:center; padding:9px 4px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+    font-size:12.5px; font-weight:700; cursor:pointer; color:var(--ink-soft); transition:.12s;
+  }
+  .nivel-opt[data-n="1"].active{background:var(--green-050); border-color:var(--green); color:#2C7A1B;}
+  .nivel-opt[data-n="2"].active{background:var(--blue-050); border-color:var(--blue); color:var(--blue-dark);}
+  .nivel-opt[data-n="3"].active{background:var(--amber-050); border-color:var(--amber); color:var(--amber);}
+  .nivel-opt[data-n="4"].active{background:var(--danger-050); border-color:var(--danger); color:var(--danger);}
+
+  .close-x{background:transparent; border:none; cursor:pointer; color:var(--ink-soft); width:30px;height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center;}
+  .close-x:hover{background:var(--bg); color:var(--ink);}
+
+  /* ---------- Toast ---------- */
+  #toast-wrap{position:fixed; bottom:22px; right:22px; display:flex; flex-direction:column; gap:10px; z-index:200;}
+  .toast{
+    background:var(--white); border-left:4px solid var(--green); border-radius:8px; box-shadow:var(--shadow-md);
+    padding:12px 16px; font-size:13.5px; font-weight:600; color:var(--ink); min-width:220px;
+    animation:slidein .18s ease-out;
+  }
+  .toast.danger{border-left-color:var(--danger);}
+  @keyframes slidein{from{opacity:0; transform:translateX(12px);} to{opacity:1; transform:none;}}
+
+  footer{text-align:center; padding:26px; color:var(--ink-faint); font-size:12px;}
+
+  @media (max-width:900px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:640px){
+    .topbar-inner{padding:14px 16px;}
+    .powered{display:none;}
+    main{padding:20px 14px 60px;}
+    .stats{grid-template-columns:1fr 1fr; gap:10px;}
+    .row2{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img src="logo.png" alt="Ativação Tec">
+      <div class="brand-divider"></div>
+      <div class="brand-text">
+        <b>Gestão de Leads</b>
+        <span>Tráfego pago &amp; captação</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="powered">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 12l10 10 10-10L12 2z"/></svg>
+        POWERED BY SGA SOFT
+      </div>
+      <div class="conn-badge">
+        <span class="conn-dot" id="conn-dot"></span>
+        <span id="conn-text">Conectando...</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="page-head">
+    <div>
+      <h1>Leads · Tráfego Pago</h1>
+      <p>Acompanhe, qualifique e organize todos os contatos recebidos em um só lugar.</p>
+    </div>
+  </div>
+
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-top"><span class="stat-diamond" style="background:var(--blue);"></span><span class="stat-label">Total de leads</span></div>
+      <div class="stat-value" id="stat-total">0</div>
+      <div class="stat-sub">Cadastrados até agora</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><span class="stat-diamond" style="background:var(--green);"></span><span class="stat-label">Quentes</span></div>
+      <div class="stat-value" id="stat-quente">0</div>
+      <div class="stat-sub">Nível de interesse 1</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><span class="stat-diamond" style="background:var(--amber);"></span><span class="stat-label">Em negociação</span></div>
+      <div class="stat-value" id="stat-negociacao">0</div>
+      <div class="stat-sub">Nível de interesse 2 e 3</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><span class="stat-diamond" style="background:var(--danger);"></span><span class="stat-label">Sem retorno</span></div>
+      <div class="stat-value" id="stat-perdido">0</div>
+      <div class="stat-sub">Nível de interesse 4</div>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="search" placeholder="Buscar por nome, email ou telefone...">
+    </div>
+    <select class="filter" id="filter-origem"><option value="">Todas as origens</option></select>
+    <select class="filter" id="filter-nivel">
+      <option value="">Todos os níveis</option>
+      <option value="1">1 · Quente</option>
+      <option value="2">2 · Morno</option>
+      <option value="3">3 · Frio</option>
+      <option value="4">4 · Perdido</option>
+    </select>
+    <div class="spacer"></div>
+    <button class="btn btn-outline" id="btn-import">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+      Importar Excel
+    </button>
+    <button class="btn btn-green" id="btn-export">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h10l6 6v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M9 13.5l2 2 4-4.5"/></svg>
+      Exportar Excel
+    </button>
+    <button class="btn btn-primary" id="btn-new">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+      Novo Lead
+    </button>
+    <input type="file" id="file-import" accept=".xlsx,.xls" style="display:none;">
+  </div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="nome">Usuário <span class="sort-arrow">▾</span></th>
+            <th>Contato</th>
+            <th data-sort="data_criacao">Conta criada em <span class="sort-arrow">▾</span></th>
+            <th data-sort="origem">Origem <span class="sort-arrow">▾</span></th>
+            <th>Observações</th>
+            <th data-sort="nivel">Nível <span class="sort-arrow">▾</span></th>
+            <th style="width:80px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="empty-state" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v16"/></svg>
+      <b>Nenhum lead encontrado</b>
+      Ajuste os filtros ou cadastre um novo lead.
+    </div>
+  </div>
+
+  <footer>Ativação Tec · powered by SGA Soft — dados salvos localmente neste navegador.</footer>
+</main>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modal-title">Novo Lead</h2>
+      <button class="close-x" id="modal-close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="f-id">
+      <div class="field">
+        <label>Usuário (nome)</label>
+        <input type="text" id="f-nome" placeholder="Nome completo">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="email@exemplo.com">
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <input type="text" id="f-telefone" placeholder="(00) 00000-0000">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Conta criada em</label>
+          <input type="date" id="f-data">
+        </div>
+        <div class="field">
+          <label>Origem</label>
+          <input type="text" id="f-origem" list="origens-list" placeholder="Ex: FEIRA, INSTAGRAM...">
+          <datalist id="origens-list"></datalist>
+        </div>
+      </div>
+      <div class="field">
+        <label>Observações</label>
+        <textarea id="f-obs" placeholder="Anotações sobre o contato..."></textarea>
+      </div>
+      <div class="field">
+        <label>Nível de interesse</label>
+        <div class="nivel-picker">
+          <div class="nivel-opt" data-n="1">1 · Quente</div>
+          <div class="nivel-opt" data-n="2">2 · Morno</div>
+          <div class="nivel-opt" data-n="3">3 · Frio</div>
+          <div class="nivel-opt" data-n="4">4 · Perdido</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="btn-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save">Salvar Lead</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<script>
+/* ================= SEED DATA (planilha original) ================= */
+const SEED_DATA = [{"nome": "Flávio Gabriel de Oliveira Faria", "email": "flaviogabrielof@gmail.com", "telefone": "(62) 98169-2174", "data_criacao": "2026-07-06", "origem": "FEIRA", "obs": "PG", "nivel": 1}, {"nome": "Eutemir Vaz de Lima", "email": "deaspadilha@hotmail.com", "telefone": "(11) 94377-9960", "data_criacao": "2026-08-02", "origem": "INSTAGRAM", "obs": "PG", "nivel": 1}, {"nome": "Diego Soares", "email": "diegorepresentacoes2007@hotmail.com", "telefone": "(51) 99612-9139", "data_criacao": "2026-08-03", "origem": "", "obs": "PG", "nivel": 2}, {"nome": "Jander Amaro de Oliveira", "email": "janderamaro.rep@gmail.com", "telefone": "(91) 98128-8193", "data_criacao": "", "origem": "FEIRA", "obs": "PG", "nivel": 1}, {"nome": "Luciana", "email": "", "telefone": "(41) 9919-9394", "data_criacao": "", "origem": "CLIENTE ATIVO", "obs": "Falou que vai comprar no inicio de agosto", "nivel": 1}, {"nome": "Daniel Silva Araújo Greco", "email": "dunay@dunay.com.br", "telefone": "(31) 8478-4252", "data_criacao": "", "origem": "DOWLOAD DIRETO", "obs": "Pediu algumas requisições para testar com a equipe, ficou interessado", "nivel": 1}, {"nome": "Willams dos Santos Silva", "email": "willams.shekinah@gmail.com", "telefone": "(83) 98800-7835", "data_criacao": "2026-08-03", "origem": "DOWLOAD DIRETO", "obs": "Falou que esta sem tempo,retornar posteriormente", "nivel": 2}, {"nome": "RUBENS FERNANDO ROMANIOLO", "email": "ROMANIOLO.REP@GMAIL.COM", "telefone": "(43) 99823-2565", "data_criacao": "2026-07-23", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, gostou da ferramente e iria avaliar, sem mais retorno", "nivel": 2}, {"nome": "Marina levy", "email": "marinapintolevy@gmail.com", "telefone": "(31) 98454-9648", "data_criacao": "2026-07-08", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, falou que não funcionou e não tivemos mais retorno", "nivel": 3}, {"nome": "Matheus Pereira coelho", "email": "willymobile@gmail.com", "telefone": "(32) 99853-8477", "data_criacao": "2026-07-08", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito,adquiriu outro sistema completa com dashboards", "nivel": 3}, {"nome": "Heitor Gélio Pazote", "email": "heitorpazote@gmail.com", "telefone": "(17) 99721-6217", "data_criacao": "2026-08-06", "origem": "DOWLOAD DIRETO", "obs": "Retorno feito no Whastapp, falou que não foi intuitivo e reclamou do peso do aplicativo", "nivel": 4}, {"nome": "Marcelo Rocha", "email": "marcelo@marcelocarvalho.com.br", "telefone": "(62) 99972-0336", "data_criacao": "2026-07-30", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, sem retorno", "nivel": 4}, {"nome": "Danilo De Oliveira Barros", "email": "hdkrep@hotmail.com", "telefone": "(71) 99257-3900", "data_criacao": "2026-08-03", "origem": "DOWLOAD DIRETO", "obs": "Contato Feito, sem retorno", "nivel": 4}, {"nome": "Eduardo Santos Pires", "email": "eduardopires.vendas@gmail.com", "telefone": "-", "data_criacao": "2026-07-15", "origem": "DOWLOAD DIRETO", "obs": "Sem contato", "nivel": 4}, {"nome": "Thiago da Silva Ribeiro", "email": "thiagoribeiro.21@hotmail.com", "telefone": "-", "data_criacao": "2026-07-21", "origem": "DOWLOAD DIRETO", "obs": "Sem contato", "nivel": 4}, {"nome": "Guilherme", "email": "", "telefone": "(27) 99309-4130", "data_criacao": "", "origem": "FEIRA", "obs": "Vai nos chamar segunda feira para realizar o dowload", "nivel": 1}, {"nome": "Rogério Ribeiro de Carvalho", "email": "representacoesrogerio@gmail.com", "telefone": "(34) 99971-5877", "data_criacao": "2026-08-03", "origem": "FEIRA", "obs": "Falou que vai avaliar", "nivel": 2}, {"nome": "Jorge", "email": "", "telefone": "(47) 99103-1901", "data_criacao": "", "origem": "FEIRA", "obs": "Vai avaliar no proximo mês", "nivel": 2}, {"nome": "Caique", "email": "", "telefone": "(31) 99991-5028", "data_criacao": "", "origem": "INSTAGRAM", "obs": "Em contato, reuniao marcada para segunda dia 10/08", "nivel": 1}, {"nome": "Carlos", "email": "", "telefone": "(47) 9911-9443", "data_criacao": "", "origem": "", "obs": "", "nivel": null}, {"nome": "", "email": "", "telefone": "(31) 99832-6673", "data_criacao": "", "origem": "", "obs": "", "nivel": null}];
+
+/* ================= BANCO DE DADOS COMPARTILHADO (Firestore) =================
+   Para que TODAS as pessoas da equipe vejam e editem os mesmos leads,
+   em tempo real, de qualquer computador/celular:
+
+   1. Crie um projeto gratuito em https://console.firebase.google.com
+   2. No menu lateral, ative "Firestore Database" (modo produção)
+   3. Vá em ⚙️ Configurações do projeto > Geral > "Seus apps" > ícone "</>" (Web)
+   4. Copie o objeto de configuração gerado e cole substituindo o objeto abaixo
+   5. Em Firestore Database > Regras, use algo como:
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            match /leads/{doc} {
+              allow read, write: if true;
+            }
+          }
+        }
+      (Isso deixa a coleção "leads" aberta para quem tiver o link do site.
+      Ideal para uso interno da equipe; não exponha o link publicamente.)
+
+   Enquanto o campo apiKey abaixo estiver com "SUA_API_KEY_AQUI", o sistema
+   funciona sozinho em modo local (dados salvos só neste navegador). */
+const FIREBASE_CONFIG = {
+  apiKey: "SUA_API_KEY_AQUI",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  projectId: "SEU_PROJETO",
+  storageBucket: "SEU_PROJETO.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:xxxxxxxxxxxxxxxxxx"
+};
+const IS_FIRESTORE_CONFIGURED = !!FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "SUA_API_KEY_AQUI";
+
+const STORAGE_KEY = 'ativacao_leads_v1';
+let leads = [];
+let db = null;
+let sortState = {col:null, dir:1};
+let editingId = null;
+let selectedNivel = null;
+
+/* ---------------- status visual da conexão ---------------- */
+function setConnStatus(mode){
+  const dot = document.getElementById('conn-dot');
+  const text = document.getElementById('conn-text');
+  if(mode === 'shared'){
+    dot.style.background = 'var(--green)';
+    text.textContent = 'Conectado · dados compartilhados em tempo real';
+  }else if(mode === 'error'){
+    dot.style.background = 'var(--danger)';
+    text.textContent = 'Erro ao conectar ao banco (veja o console)';
+  }else{
+    dot.style.background = 'var(--ink-faint)';
+    text.textContent = 'Modo local · dados salvos só neste navegador';
+  }
+}
+
+/* ---------------- modo local (localStorage) ---------------- */
+function loadLocalData(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){
+    try{ return JSON.parse(raw); }catch(e){ /* fallthrough */ }
+  }
+  const seeded = SEED_DATA.map(d => ({...d, id: crypto.randomUUID()}));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+  return seeded;
+}
+function saveLocalData(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+}
+
+/* ---------------- camada de dados (funciona igual nos dois modos) ---------------- */
+async function addLeadRecord(payload){
+  if(IS_FIRESTORE_CONFIGURED){
+    await db.collection('leads').add(payload);
+  }else{
+    leads.push({ id: crypto.randomUUID(), ...payload });
+    saveLocalData();
+    render();
+  }
+}
+async function updateLeadRecord(id, payload){
+  if(IS_FIRESTORE_CONFIGURED){
+    await db.collection('leads').doc(id).update(payload);
+  }else{
+    leads = leads.map(l => l.id === id ? {...l, ...payload} : l);
+    saveLocalData();
+    render();
+  }
+}
+async function deleteLeadRecord(id){
+  if(IS_FIRESTORE_CONFIGURED){
+    await db.collection('leads').doc(id).delete();
+  }else{
+    leads = leads.filter(l=>l.id!==id);
+    saveLocalData();
+    render();
+  }
+}
+async function bulkAddRecords(list){
+  if(IS_FIRESTORE_CONFIGURED){
+    const size = 400;
+    for(let i=0;i<list.length;i+=size){
+      const batch = db.batch();
+      list.slice(i,i+size).forEach(item=>{
+        const ref = db.collection('leads').doc();
+        batch.set(ref, item);
+      });
+      await batch.commit();
+    }
+  }else{
+    leads = [...leads, ...list.map(d=>({id:crypto.randomUUID(), ...d}))];
+    saveLocalData();
+    render();
+  }
+}
+async function replaceAllRecords(list){
+  if(IS_FIRESTORE_CONFIGURED){
+    const snap = await db.collection('leads').get();
+    const size = 400;
+    const docs = snap.docs;
+    for(let i=0;i<docs.length;i+=size){
+      const batch = db.batch();
+      docs.slice(i,i+size).forEach(d=>batch.delete(d.ref));
+      await batch.commit();
+    }
+    await bulkAddRecords(list);
+  }else{
+    leads = list.map(d=>({id:crypto.randomUUID(), ...d}));
+    saveLocalData();
+    render();
+  }
+}
+
+/* ---------------- inicialização ---------------- */
+function initApp(){
+  if(IS_FIRESTORE_CONFIGURED){
+    try{
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+      db.collection('leads').onSnapshot(async (snap)=>{
+        if(snap.empty){
+          await bulkAddRecords(SEED_DATA);
+          return;
+        }
+        leads = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        setConnStatus('shared');
+        render();
+      }, (err)=>{
+        console.error(err);
+        setConnStatus('error');
+        toast('Não foi possível conectar ao banco de dados compartilhado', 'danger');
+      });
+    }catch(err){
+      console.error(err);
+      setConnStatus('error');
+    }
+  }else{
+    setConnStatus('local');
+    leads = loadLocalData();
+    render();
+  }
+}
+
+/* ================= HELPERS ================= */
+function fmtDate(iso){
+  if(!iso) return '—';
+  const [y,m,d] = iso.split('-');
+  if(!y||!m||!d) return iso;
+  return `${d}/${m}/${y}`;
+}
+function nivelLabel(n){
+  return {1:'Quente',2:'Morno',3:'Frio',4:'Perdido'}[n] || 'N/D';
+}
+function toast(msg, type='ok'){
+  const el = document.createElement('div');
+  el.className = 'toast' + (type==='danger' ? ' danger':'');
+  el.textContent = msg;
+  document.getElementById('toast-wrap').appendChild(el);
+  setTimeout(()=>{ el.style.transition='opacity .25s'; el.style.opacity='0'; setTimeout(()=>el.remove(),250); }, 2400);
+}
+
+/* ================= RENDER ================= */
+function populateOrigemFilter(){
+  const origens = [...new Set(leads.map(l=>l.origem).filter(Boolean))].sort();
+  const sel = document.getElementById('filter-origem');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Todas as origens</option>' + origens.map(o=>`<option value="${o}">${o}</option>`).join('');
+  sel.value = current;
+  document.getElementById('origens-list').innerHTML = origens.map(o=>`<option value="${o}">`).join('');
+}
+
+function getFiltered(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const fOrigem = document.getElementById('filter-origem').value;
+  const fNivel = document.getElementById('filter-nivel').value;
+  let out = leads.filter(l=>{
+    if(fOrigem && l.origem !== fOrigem) return false;
+    if(fNivel && String(l.nivel) !== fNivel) return false;
+    if(q){
+      const hay = `${l.nome} ${l.email} ${l.telefone}`.toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  if(sortState.col){
+    out.sort((a,b)=>{
+      let va = a[sortState.col] ?? '';
+      let vb = b[sortState.col] ?? '';
+      if(sortState.col === 'nivel'){ va = va || 99; vb = vb || 99; }
+      if(va < vb) return -1*sortState.dir;
+      if(va > vb) return 1*sortState.dir;
+      return 0;
+    });
+  }
+  return out;
+}
+
+function render(){
+  populateOrigemFilter();
+  const filtered = getFiltered();
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('empty-state');
+  tbody.innerHTML = '';
+  empty.style.display = filtered.length ? 'none' : 'block';
+
+  filtered.forEach(l=>{
+    const tr = document.createElement('tr');
+    const nivelClass = l.nivel ? `nivel-${l.nivel}` : 'nivel-none';
+    tr.innerHTML = `
+      <td class="cell-name">${l.nome || '—'}</td>
+      <td class="cell-contact">
+        ${l.email ? `<span class="email">${l.email}</span>` : ''}
+        ${l.telefone || ''}
+      </td>
+      <td>${fmtDate(l.data_criacao)}</td>
+      <td>${l.origem ? `<span class="badge badge-origem">${l.origem}</span>` : '—'}</td>
+      <td class="cell-obs" title="${(l.obs||'').replace(/"/g,'&quot;')}">${l.obs || '—'}</td>
+      <td><span class="badge ${nivelClass}"><span class="dot"></span>${l.nivel ? l.nivel+' · '+nivelLabel(l.nivel) : 'N/D'}</span></td>
+      <td>
+        <div class="actions-cell">
+          <button class="icon-btn" data-edit="${l.id}" title="Editar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+          <button class="icon-btn danger" data-del="${l.id}" title="Excluir">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>
+          </button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('stat-total').textContent = leads.length;
+  document.getElementById('stat-quente').textContent = leads.filter(l=>l.nivel===1).length;
+  document.getElementById('stat-negociacao').textContent = leads.filter(l=>l.nivel===2||l.nivel===3).length;
+  document.getElementById('stat-perdido').textContent = leads.filter(l=>l.nivel===4).length;
+}
+
+/* ================= MODAL ================= */
+const overlay = document.getElementById('overlay');
+function openModal(lead){
+  editingId = lead ? lead.id : null;
+  document.getElementById('modal-title').textContent = lead ? 'Editar Lead' : 'Novo Lead';
+  document.getElementById('f-nome').value = lead?.nome || '';
+  document.getElementById('f-email').value = lead?.email || '';
+  document.getElementById('f-telefone').value = lead?.telefone || '';
+  document.getElementById('f-data').value = lead?.data_criacao || '';
+  document.getElementById('f-origem').value = lead?.origem || '';
+  document.getElementById('f-obs').value = lead?.obs || '';
+  selectedNivel = lead?.nivel || null;
+  updateNivelPicker();
+  overlay.classList.add('open');
+  document.getElementById('f-nome').focus();
+}
+function closeModal(){ overlay.classList.remove('open'); }
+function updateNivelPicker(){
+  document.querySelectorAll('.nivel-opt').forEach(el=>{
+    el.classList.toggle('active', Number(el.dataset.n) === selectedNivel);
+  });
+}
+document.querySelectorAll('.nivel-opt').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    const n = Number(el.dataset.n);
+    selectedNivel = (selectedNivel === n) ? null : n;
+    updateNivelPicker();
+  });
+});
+
+document.getElementById('btn-new').addEventListener('click', ()=>openModal(null));
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('btn-cancel').addEventListener('click', closeModal);
+overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
+
+document.getElementById('btn-save').addEventListener('click', async ()=>{
+  const nome = document.getElementById('f-nome').value.trim();
+  if(!nome){ toast('Informe o nome do lead', 'danger'); return; }
+  const payload = {
+    nome,
+    email: document.getElementById('f-email').value.trim(),
+    telefone: document.getElementById('f-telefone').value.trim(),
+    data_criacao: document.getElementById('f-data').value,
+    origem: document.getElementById('f-origem').value.trim(),
+    obs: document.getElementById('f-obs').value.trim(),
+    nivel: selectedNivel
+  };
+  const saveBtn = document.getElementById('btn-save');
+  saveBtn.disabled = true;
+  try{
+    if(editingId){
+      await updateLeadRecord(editingId, payload);
+      toast('Lead atualizado com sucesso');
+    }else{
+      await addLeadRecord(payload);
+      toast('Lead criado com sucesso');
+    }
+    closeModal();
+  }catch(err){
+    console.error(err);
+    toast('Erro ao salvar o lead', 'danger');
+  }finally{
+    saveBtn.disabled = false;
+  }
+});
+
+document.getElementById('tbody').addEventListener('click', async (e)=>{
+  const editId = e.target.closest('[data-edit]')?.dataset.edit;
+  const delId = e.target.closest('[data-del]')?.dataset.del;
+  if(editId){ openModal(leads.find(l=>l.id===editId)); }
+  if(delId){
+    if(confirm('Tem certeza que deseja excluir este lead?')){
+      try{
+        await deleteLeadRecord(delId);
+        toast('Lead excluído', 'danger');
+      }catch(err){
+        console.error(err);
+        toast('Erro ao excluir o lead', 'danger');
+      }
+    }
+  }
+});
+
+/* ================= FILTER / SEARCH / SORT ================= */
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('filter-origem').addEventListener('change', render);
+document.getElementById('filter-nivel').addEventListener('change', render);
+document.querySelectorAll('th[data-sort]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const col = th.dataset.sort;
+    if(sortState.col === col){ sortState.dir *= -1; } else { sortState = {col, dir:1}; }
+    render();
+  });
+});
+
+/* ================= EXPORT XLSX ================= */
+document.getElementById('btn-export').addEventListener('click', ()=>{
+  const rows = leads.map(l=>({
+    'USUÁRIO': l.nome || '',
+    'EMAIL': l.email || '',
+    'TELEFONE': l.telefone || '',
+    'CONTA CRIADA EM': l.data_criacao ? fmtDate(l.data_criacao) : '',
+    'ORIGEM': l.origem || '',
+    'OBS': l.obs || '',
+    'NIVEL DE INTERESSE': l.nivel || ''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:30},{wch:30},{wch:18},{wch:16},{wch:16},{wch:45},{wch:16}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+  const stamp = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `leads_trafego_pago_${stamp}.xlsx`);
+  toast('Excel exportado com sucesso');
+});
+
+/* ================= IMPORT XLSX ================= */
+document.getElementById('btn-import').addEventListener('click', ()=>{
+  document.getElementById('file-import').click();
+});
+document.getElementById('file-import').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (evt)=>{
+    try{
+      const wb = XLSX.read(evt.target.result, {type:'array', cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      const imported = rows.map(r=>{
+        const get = (...keys)=>{ for(const k of keys){ if(r[k]!==undefined) return r[k]; } return ''; };
+        let dataVal = get('CONTA CRIADA EM','Conta Criada Em','DATA','Data');
+        let isoDate = '';
+        if(dataVal instanceof Date){
+          isoDate = dataVal.toISOString().slice(0,10);
+        }else if(typeof dataVal === 'string' && dataVal.includes('/')){
+          const [d,m,y] = dataVal.split('/');
+          if(d&&m&&y) isoDate = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+        }else if(typeof dataVal === 'string'){
+          isoDate = dataVal;
+        }
+        const nivelRaw = get('NIVEL DE INTERESSE','Nivel De Interesse','NÍVEL DE INTERESSE');
+        return {
+          id: crypto.randomUUID(),
+          nome: String(get('USUÁRIO','USUARIO','Usuário')||'').trim(),
+          email: String(get('EMAIL','Email')||'').trim(),
+          telefone: String(get('TELEFONE','Telefone')||'').trim(),
+          data_criacao: isoDate,
+          origem: String(get('ORIGEM','Origem')||'').trim(),
+          obs: String(get('OBS','Obs','Observações')||'').trim(),
+          nivel: nivelRaw ? Number(nivelRaw) : null
+        };
+      }).filter(l=>l.nome || l.email || l.telefone);
+
+      if(!imported.length){ toast('Nenhum dado válido encontrado na planilha', 'danger'); return; }
+      const merge = confirm(`Encontrados ${imported.length} leads na planilha.\n\nOK = adicionar aos existentes\nCancelar = substituir todos os dados atuais`);
+      try{
+        if(merge){ await bulkAddRecords(imported); }
+        else{ await replaceAllRecords(imported); }
+        toast(`${imported.length} leads importados com sucesso`);
+      }catch(err){
+        console.error(err);
+        toast('Erro ao importar os dados', 'danger');
+      }
+    }catch(err){
+      console.error(err);
+      toast('Erro ao ler o arquivo Excel', 'danger');
+    }
+    e.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+/* ================= INIT ================= */
+initApp();
+</script>
+</body>
+</html>
