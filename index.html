@@ -405,6 +405,7 @@
             <th data-sort="origem">Origem <span class="sort-arrow">▾</span></th>
             <th>Observações</th>
             <th data-sort="status">Status <span class="sort-arrow">▾</span></th>
+            <th data-sort="metodo_pagamento">Pagamento <span class="sort-arrow">▾</span></th>
             <th style="width:80px;">Ações</th>
           </tr>
         </thead>
@@ -456,6 +457,15 @@
           <input type="text" id="f-origem" list="origens-list" placeholder="Ex: FEIRA, INSTAGRAM...">
           <datalist id="origens-list"></datalist>
         </div>
+      </div>
+      <div class="field">
+        <label for="f-pagamento">Método de pagamento</label>
+        <select id="f-pagamento">
+          <option value="">Não informado</option>
+          <option value="Cartão">Cartão</option>
+          <option value="Pix">Pix</option>
+          <option value="Boleto">Boleto</option>
+        </select>
       </div>
       <div class="field">
         <label>Observações</label>
@@ -746,6 +756,7 @@ function render(){
       <td data-label="Origem">${l.origem ? `<span class="badge badge-origem">${l.origem}</span>` : '—'}</td>
       <td class="cell-obs" data-label="Observações" title="${(l.obs||'').replace(/"/g,'&quot;')}">${l.obs ? `<div class="obs-clamp">${l.obs}</div>` : '—'}</td>
       <td data-label="Status"><span class="badge ${statusClass}"><span class="dot"></span>${l.status || 'N/D'}</span></td>
+      <td data-label="Pagamento">${['Cartão','Pix','Boleto'].includes(l.metodo_pagamento) ? l.metodo_pagamento : '—'}</td>
       <td data-label="Ações">
         <div class="actions-cell">
           <button class="icon-btn" data-edit="${l.id}" title="Editar">
@@ -778,6 +789,7 @@ function openModal(lead){
   document.getElementById('f-data').value = lead?.data_criacao || '';
   document.getElementById('f-origem').value = lead?.origem || '';
   document.getElementById('f-obs').value = lead?.obs || '';
+  document.getElementById('f-pagamento').value = lead?.metodo_pagamento || '';
   selectedStatus = lead?.status || null;
   updateStatusPicker();
   overlay.classList.add('open');
@@ -815,7 +827,8 @@ document.getElementById('btn-save').addEventListener('click', async ()=>{
     data_criacao: document.getElementById('f-data').value,
     origem: document.getElementById('f-origem').value.trim(),
     obs: document.getElementById('f-obs').value.trim(),
-    status: selectedStatus
+    status: selectedStatus,
+    metodo_pagamento: document.getElementById('f-pagamento').value
   };
   const saveBtn = document.getElementById('btn-save');
   saveBtn.disabled = true;
@@ -874,10 +887,11 @@ document.getElementById('btn-export').addEventListener('click', ()=>{
     'CONTA CRIADA EM': l.data_criacao ? fmtDate(l.data_criacao) : '',
     'ORIGEM': l.origem || '',
     'OBS': l.obs || '',
-    'STATUS': l.status || ''
+    'STATUS': l.status || '',
+    'MÉTODO DE PAGAMENTO': l.metodo_pagamento || ''
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:30},{wch:30},{wch:18},{wch:16},{wch:16},{wch:45},{wch:16}];
+  ws['!cols'] = [{wch:30},{wch:30},{wch:18},{wch:16},{wch:16},{wch:45},{wch:16},{wch:22}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Leads');
   const stamp = new Date().toISOString().slice(0,10);
@@ -921,7 +935,8 @@ document.getElementById('file-import').addEventListener('change', (e)=>{
           data_criacao: isoDate,
           origem: String(get('ORIGEM','Origem')||'').trim(),
           obs: String(get('OBS','Obs','Observações')||'').trim(),
-          status: statusRaw || oldNivelMap[nivelRaw] || null
+          status: statusRaw || oldNivelMap[nivelRaw] || null,
+          metodo_pagamento: ({cartao:'Cartão', pix:'Pix', boleto:'Boleto'})[String(get('MÉTODO DE PAGAMENTO','METODO DE PAGAMENTO','Método de pagamento','Pagamento','metodo_pagamento')||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()] || ''
         };
       }).filter(l=>l.nome || l.email || l.telefone);
 
