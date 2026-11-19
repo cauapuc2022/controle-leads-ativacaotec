@@ -379,7 +379,7 @@
       <option value="Sem interesse">Sem interesse</option>
     </select>
     <div class="spacer"></div>
-    <button class="btn btn-primary" id="btn-results" type="button" style="background:#125A9C;box-shadow:0 2px 8px #1876D044;">📊 Visualizar Resultado de Vendas Detalhado</button>
+    <button class="btn btn-primary" id="btn-results" type="button">Visualizar resultados de vendas</button>
     <button class="btn btn-outline" id="btn-import">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
       Importar Excel
@@ -468,9 +468,9 @@
           <option value="Boleto">Boleto</option>
         </select>
       </div>
-      <div class="field">
-        <label for="f-valor-venda">Valor de Venda (R$)</label>
-        <input type="text" id="f-valor-venda" inputmode="decimal" placeholder="0,00">
+      <div class="row2">
+        <div class="field"><label>Valor da venda (R$)</label><input type="number" min="0" step="0.01" id="f-valor" placeholder="0,00"></div>
+        <div class="field"><label>Data da venda</label><input type="date" id="f-data-venda"></div>
       </div>
       <div class="field">
         <label>Observações</label>
@@ -496,21 +496,25 @@
 </div>
 
 <div class="overlay" id="results-overlay">
-  <div class="modal" style="max-width:720px">
-    <div class="modal-head"><h2>Resultado de Vendas</h2><button class="close-x" id="results-close" aria-label="Fechar">✕</button></div>
+  <div class="modal" style="max-width:950px">
+    <div class="modal-head"><h2>Resultados de vendas</h2><button class="close-x" id="results-close" aria-label="Fechar">✕</button></div>
     <div class="modal-body">
-      <section class="stats" style="margin-bottom:0">
-        <div class="stat-card"><span class="stat-label">Total vendido</span><span class="stat-value" id="result-total">R$ 0,00</span></div>
-        <div class="stat-card"><span class="stat-label">Quantidade de vendas</span><span class="stat-value" id="result-count">0</span></div>
-        <div class="stat-card"><span class="stat-label">Ticket médio</span><span class="stat-value" id="result-ticket">R$ 0,00</span></div>
-      </section>
-      <p style="color:var(--ink-soft);font-size:13px;margin:0">Considera os leads com status Venda Finalizada. Valores não informados não são presumidos como zero.</p>
-      <div id="results-detail" style="font-size:13px"></div>
-      <div class="table-scroll"><table style="min-width:620px">
-        <thead><tr><th>Cliente</th><th>Data</th><th>Origem</th><th>Pagamento</th><th>Valor de venda</th></tr></thead>
-        <tbody id="results-sales-body"></tbody>
-      </table></div>
+      <div class="row2">
+        <div class="field"><label>Período inicial</label><input type="date" id="results-from"></div>
+        <div class="field"><label>Período final</label><input type="date" id="results-to"></div>
+      </div>
+      <p style="font-size:12px;color:var(--ink-soft);margin:0">Período aplicado à data da venda. Vendas sem data aparecem apenas quando não há filtro de período.</p>
+      <div class="stats" style="margin:0">
+        <div class="stat-card"><span class="stat-label">Vendas finalizadas</span><span class="stat-value" id="res-count">0</span></div>
+        <div class="stat-card"><span class="stat-label">Receita registrada</span><span class="stat-value" style="font-size:23px" id="res-revenue">R$ 0,00</span></div>
+        <div class="stat-card"><span class="stat-label">Ticket médio informado</span><span class="stat-value" style="font-size:23px" id="res-ticket">R$ 0,00</span></div>
+        <div class="stat-card"><span class="stat-label">Conversão dos leads</span><span class="stat-value" id="res-rate">0%</span></div>
+      </div>
+      <h3 style="margin:6px 0 0">Vendas por forma de pagamento</h3><div id="res-payments"></div>
+      <h3 style="margin:6px 0 0">Vendas por origem</h3><div id="res-origins"></div>
+      <p id="res-note" style="font-size:12px;color:var(--ink-soft)"></p>
     </div>
+    <div class="modal-foot"><button class="btn btn-outline" id="results-dismiss">Fechar</button></div>
   </div>
 </div>
 <div id="toast-wrap"></div>
@@ -812,7 +816,8 @@ function openModal(lead){
   document.getElementById('f-data').value = lead?.data_criacao || '';
   document.getElementById('f-origem').value = lead?.origem || '';
   document.getElementById('f-obs').value = lead?.obs || '';
-  document.getElementById('f-valor-venda').value = lead?.valor_venda != null ? Number(lead.valor_venda).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+  document.getElementById('f-valor').value = lead?.valor_venda ?? '';
+  document.getElementById('f-data-venda').value = lead?.data_venda || '';
   document.getElementById('f-pagamento').value = lead?.metodo_pagamento || '';
   selectedStatus = lead?.status || null;
   updateStatusPicker();
@@ -836,30 +841,6 @@ document.getElementById('f-telefone').addEventListener('input', (e)=>{
   e.target.value = maskPhone(e.target.value);
 });
 
-const resultsOverlay = document.getElementById('results-overlay');
-const brl = n => Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-document.getElementById('btn-results').addEventListener('click',()=>{
-  const sales=leads.filter(l=>l.status==='Venda Finalizada');
-  const known=sales.filter(l=>l.valor_venda!==null && l.valor_venda!==undefined && l.valor_venda!=='' && Number.isFinite(Number(l.valor_venda)));
-  const total=known.reduce((sum,l)=>sum+Number(l.valor_venda),0);
-  document.getElementById('result-total').textContent=brl(total);
-  document.getElementById('result-count').textContent=sales.length;
-  document.getElementById('result-ticket').textContent=known.length?brl(total/known.length):'—';
-  document.getElementById('results-detail').textContent=known.length+' venda(s) com valor preenchido de '+sales.length+' finalizada(s).';
-  const tbody=document.getElementById('results-sales-body');
-  tbody.replaceChildren();
-  sales.forEach(l=>{
-    const tr=document.createElement('tr');
-    const values=[l.nome||'Sem nome',l.data_criacao||'—',l.origem||'—',l.metodo_pagamento||'—',
-      l.valor_venda==null||l.valor_venda===''?'Não informado':brl(l.valor_venda)];
-    values.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;td.setAttribute('data-label',['Cliente','Data','Origem','Pagamento','Valor de venda'][i]);tr.appendChild(td);});
-    tbody.appendChild(tr);
-  });
-  if(!sales.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=5;td.textContent='Nenhuma venda finalizada cadastrada.';tr.appendChild(td);tbody.appendChild(tr);}
-  resultsOverlay.classList.add('open');
-});
-document.getElementById('results-close').addEventListener('click',()=>resultsOverlay.classList.remove('open'));
-resultsOverlay.addEventListener('click',e=>{if(e.target===resultsOverlay)resultsOverlay.classList.remove('open');});
 document.getElementById('btn-new').addEventListener('click', ()=>openModal(null));
 document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('btn-cancel').addEventListener('click', closeModal);
@@ -876,20 +857,10 @@ document.getElementById('btn-save').addEventListener('click', async ()=>{
     origem: document.getElementById('f-origem').value.trim(),
     obs: document.getElementById('f-obs').value.trim(),
     status: selectedStatus,
+    valor_venda: document.getElementById('f-valor').value === '' ? null : Number(document.getElementById('f-valor').value),
+    data_venda: document.getElementById('f-data-venda').value,
     metodo_pagamento: document.getElementById('f-pagamento').value
   };
-  const rawVenda = document.getElementById('f-valor-venda').value.trim();
-  if(rawVenda){
-    const parsed = Number(rawVenda.replace(/\\s/g,'').replace(/R\\$/g,'').replace(/\\./g,'').replace(',','.'));
-    if(!Number.isFinite(parsed) || parsed < 0){ toast('Informe um valor de venda válido','danger'); return; }
-    payload.valor_venda = parsed;
-  }else if(!editingId){
-    payload.valor_venda = null;
-  }else{
-    // Não apagar valores existentes quando o campo vier vazio.
-    const old = leads.find(l=>l.id===editingId);
-    if(old?.valor_venda == null) payload.valor_venda = null;
-  }
   const saveBtn = document.getElementById('btn-save');
   saveBtn.disabled = true;
   try{
@@ -948,7 +919,9 @@ document.getElementById('btn-export').addEventListener('click', ()=>{
     'ORIGEM': l.origem || '',
     'OBS': l.obs || '',
     'STATUS': l.status || '',
-    'MÉTODO DE PAGAMENTO': l.metodo_pagamento || ''
+    'MÉTODO DE PAGAMENTO': l.metodo_pagamento || '',
+    'VALOR DA VENDA': l.valor_venda ?? '',
+    'DATA DA VENDA': l.data_venda ? fmtDate(l.data_venda) : ''
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [{wch:30},{wch:30},{wch:18},{wch:16},{wch:16},{wch:45},{wch:16},{wch:22}];
@@ -996,6 +969,8 @@ document.getElementById('file-import').addEventListener('change', (e)=>{
           origem: String(get('ORIGEM','Origem')||'').trim(),
           obs: String(get('OBS','Obs','Observações')||'').trim(),
           status: statusRaw || oldNivelMap[nivelRaw] || null,
+          valor_venda: (()=>{ const v=get('VALOR DA VENDA','Valor da venda'); if(v==='')return null; const n=Number(String(v).replace(/R\$\s*/g,'').replace(/\./g,'').replace(',','.')); return Number.isFinite(n)?n:null; })(),
+          data_venda: String(get('DATA DA VENDA','Data da venda')||'').replace(/^(\d{2})\/(\d{2})\/(\d{4})$/,'$3-$2-$1'),
           metodo_pagamento: ({cartao:'Cartão', pix:'Pix', boleto:'Boleto'})[String(get('MÉTODO DE PAGAMENTO','METODO DE PAGAMENTO','Método de pagamento','Pagamento','metodo_pagamento')||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()] || ''
         };
       }).filter(l=>l.nome || l.email || l.telefone);
@@ -1018,6 +993,40 @@ document.getElementById('file-import').addEventListener('change', (e)=>{
   };
   reader.readAsArrayBuffer(file);
 });
+
+
+/* Painel de resultados: somente leitura dos leads existentes */
+const resultsOverlay = document.getElementById('results-overlay');
+const brl = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
+function renderResults(){
+  const from=document.getElementById('results-from').value;
+  const to=document.getElementById('results-to').value;
+  const period = from || to;
+  const filtered=leads.filter(l=>!period || (l.data_venda && (!from || l.data_venda>=from) && (!to || l.data_venda<=to)));
+  const sales=filtered.filter(l=>l.status==='Venda Finalizada');
+  const valued=sales.filter(l=>l.valor_venda!==null && l.valor_venda!==undefined && l.valor_venda!=='' && Number.isFinite(Number(l.valor_venda)));
+  const revenue=valued.reduce((a,l)=>a+Number(l.valor_venda),0);
+  document.getElementById('res-count').textContent=sales.length;
+  document.getElementById('res-revenue').textContent=brl(revenue);
+  document.getElementById('res-ticket').textContent=brl(valued.length?revenue/valued.length:0);
+  document.getElementById('res-rate').textContent=(filtered.length?100*sales.length/filtered.length:0).toFixed(1).replace('.',',')+'%';
+  function groups(key){
+    const grouped={};
+    sales.forEach(l=>{const k=l[key]||'Não informado';if(!grouped[k])grouped[k]={count:0,value:0};grouped[k].count++;grouped[k].value+=Number(l.valor_venda)||0;});
+    return Object.entries(grouped).sort((a,b)=>b[1].count-a[1].count).map(([name,v])=>'<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:10px 0;gap:12px"><span>'+escapeResults(name)+'</span><strong>'+v.count+' venda(s) · '+brl(v.value)+'</strong></div>').join('')||'<p>Nenhuma venda no período.</p>';
+  }
+  document.getElementById('res-payments').innerHTML=groups('metodo_pagamento');
+  document.getElementById('res-origins').innerHTML=groups('origem');
+  document.getElementById('res-note').textContent=valued.length+' de '+sales.length+' vendas têm valor informado. A receita e o ticket médio consideram apenas os valores registrados.';
+}
+function escapeResults(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+document.getElementById('btn-results').addEventListener('click',()=>{renderResults();resultsOverlay.classList.add('open');});
+function closeResults(){resultsOverlay.classList.remove('open');}
+document.getElementById('results-close').addEventListener('click',closeResults);
+document.getElementById('results-dismiss').addEventListener('click',closeResults);
+resultsOverlay.addEventListener('click',e=>{if(e.target===resultsOverlay)closeResults();});
+document.getElementById('results-from').addEventListener('change',renderResults);
+document.getElementById('results-to').addEventListener('change',renderResults);
 
 /* ================= INIT ================= */
 initApp();
