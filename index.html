@@ -305,18 +305,12 @@
 <header class="topbar">
   <div class="topbar-inner">
     <div class="brand">
-      <img src="logo.png" alt="Ativação Tec">
-      <div class="brand-divider"></div>
       <div class="brand-text">
         <b>Gestão de Leads</b>
         <span>Tráfego pago &amp; captação</span>
       </div>
     </div>
     <div class="header-right"><button type="button" class="btn btn-primary" id="nav-results">Visualizar resultados de vendas</button>
-      <div class="powered">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 12l10 10 10-10L12 2z"/></svg>
-        POWERED BY SGA SOFT
-      </div>
       <div class="conn-badge">
         <span class="conn-dot" id="conn-dot"></span>
         <span id="conn-text">Conectando...</span>
@@ -1002,8 +996,8 @@ function update(){const all=sales();refreshOptions('dash-origin',[...new Set(all
  $('dash-rows').innerHTML=priced.map(l=>'<tr><td data-label="Cliente">'+esc(l.nome||'—')+'</td><td data-label="Origem">'+esc(l.origem||'—')+'</td><td data-label="Cadastro">'+esc(fmtDate(l.data_criacao))+'</td><td data-label="Pagamento">'+esc(l.metodo_pagamento||'—')+'</td><td data-label="Valor">'+(l._amount===null?'Não informado':brl(l._amount))+'</td><td data-label="Desconto">'+(l._amount===null?'—':((600-l._amount)/600*100).toFixed(2).replace('.',',')+'%')+'</td></tr>').join('')||'<tr><td colspan="6">Nenhuma venda finalizada neste filtro.</td></tr>';
  window.__dashExport=()=>{const rows=[['Cliente','Origem','Cadastro','Tipo de pagamento','Valor','Desconto (%)']].concat(priced.map(l=>[l.nome||'',l.origem||'',fmtDate(l.data_criacao),l.metodo_pagamento||'',l._amount===null?'':l._amount,l._amount===null?'':((600-l._amount)/600*100).toFixed(2).replace('.',',')+'%']));const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='resultados_vendas_ativacao.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 }
-$('nav-results').addEventListener('click',()=>{$('leads-view').style.display='none';$('results-view').style.display='block';update();window.scrollTo(0,0)});
-$('nav-back').addEventListener('click',()=>{$('results-view').style.display='none';$('leads-view').style.display='block';window.scrollTo(0,0)});
+$('nav-results').addEventListener('click',()=>{$('leads-view').style.display='none';$('results-view').style.display='block';$('nav-results').style.display='none';update();window.scrollTo(0,0)});
+$('nav-back').addEventListener('click',()=>{$('results-view').style.display='none';$('leads-view').style.display='block';$('nav-results').style.display='inline-flex';window.scrollTo(0,0)});
 $('dash-origin').addEventListener('change',update);$('dash-month').addEventListener('change',update);$('dash-csv').addEventListener('click',()=>window.__dashExport());
 })();
 </script>
