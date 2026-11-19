@@ -362,11 +362,6 @@
       <div class="stat-sub">Leads sem interesse</div>
     </div>
   </section>
-  <section class="stats" aria-label="Resultados de Venda">
-    <div class="stat-card"><div class="stat-label">Total vendido</div><div class="stat-value" id="stat-receita">R$ 0,00</div><div class="stat-sub">Vendas finalizadas com valor registrado</div></div>
-    <div class="stat-card"><div class="stat-label">Quantidade de vendas</div><div class="stat-value" id="stat-qtd-vendas">0</div><div class="stat-sub">Leads com venda finalizada</div></div>
-    <div class="stat-card"><div class="stat-label">Ticket médio</div><div class="stat-value" id="stat-ticket">R$ 0,00</div><div class="stat-sub">Total vendido / vendas com valor</div></div>
-  </section>
 
   <div class="toolbar">
     <div class="search-box">
@@ -384,6 +379,7 @@
       <option value="Sem interesse">Sem interesse</option>
     </select>
     <div class="spacer"></div>
+    <button class="btn btn-outline" id="btn-results">Visualizar Resultado de Vendas Detalhado</button>
     <button class="btn btn-outline" id="btn-import">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
       Importar Excel
@@ -408,7 +404,7 @@
             <th>Contato</th>
             <th data-sort="data_criacao">Conta criada em <span class="sort-arrow">▾</span></th>
             <th data-sort="origem">Origem <span class="sort-arrow">▾</span></th>
-            <th data-sort="valor_venda">Valor de Venda <span class="sort-arrow">▾</span></th>
+            <th>Observações</th>
             <th data-sort="status">Status <span class="sort-arrow">▾</span></th>
             <th data-sort="metodo_pagamento">Pagamento <span class="sort-arrow">▾</span></th>
             <th style="width:80px;">Ações</th>
@@ -424,7 +420,7 @@
     </div>
   </div>
 
-  <footer>Ativação Tec · powered by SGA Soft — dados sincronizados quando o Firebase está conectado; caso contrário, armazenados neste navegador.</footer>
+  <footer>Ativação Tec · powered by SGA Soft — dados salvos localmente neste navegador.</footer>
 </main>
 
 <!-- Modal -->
@@ -473,12 +469,12 @@
         </select>
       </div>
       <div class="field">
-        <label>Valor de Venda (R$)</label>
-        <input type="number" id="f-valor" min="0" step="0.01" placeholder="0,00">
+        <label for="f-valor-venda">Valor de Venda (R$)</label>
+        <input type="text" id="f-valor-venda" inputmode="decimal" placeholder="0,00">
       </div>
       <div class="field">
-        <label>Observações internas (preservadas)</label>
-        <textarea id="f-obs" placeholder="Histórico e anotações do lead..."></textarea>
+        <label>Observações</label>
+        <textarea id="f-obs" placeholder="Anotações sobre o contato..."></textarea>
       </div>
       <div class="field">
         <label>Status</label>
@@ -499,6 +495,24 @@
   </div>
 </div>
 
+<div class="overlay" id="results-overlay">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-head"><h2>Resultado de Vendas</h2><button class="close-x" id="results-close" aria-label="Fechar">✕</button></div>
+    <div class="modal-body">
+      <section class="stats" style="margin-bottom:0">
+        <div class="stat-card"><span class="stat-label">Total vendido</span><span class="stat-value" id="result-total">R$ 0,00</span></div>
+        <div class="stat-card"><span class="stat-label">Quantidade de vendas</span><span class="stat-value" id="result-count">0</span></div>
+        <div class="stat-card"><span class="stat-label">Ticket médio</span><span class="stat-value" id="result-ticket">R$ 0,00</span></div>
+      </section>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0">Considera os leads com status Venda Finalizada. Valores não informados não são presumidos como zero.</p>
+      <div id="results-detail" style="font-size:13px"></div>
+      <div class="table-scroll"><table style="min-width:620px">
+        <thead><tr><th>Cliente</th><th>Data</th><th>Origem</th><th>Pagamento</th><th>Valor de venda</th></tr></thead>
+        <tbody id="results-sales-body"></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
 <div id="toast-wrap"></div>
 
 <script>
@@ -731,8 +745,8 @@ function getFiltered(){
   });
   if(sortState.col){
     out.sort((a,b)=>{
-      let va = sortState.col === 'valor_venda' ? (getValorVenda(a) ?? -1) : (a[sortState.col] ?? '');
-      let vb = sortState.col === 'valor_venda' ? (getValorVenda(b) ?? -1) : (b[sortState.col] ?? '');
+      let va = a[sortState.col] ?? '';
+      let vb = b[sortState.col] ?? '';
       if(va < vb) return -1*sortState.dir;
       if(va > vb) return 1*sortState.dir;
       return 0;
@@ -744,24 +758,6 @@ function getFiltered(){
   return out;
 }
 
-function parseValorVenda(value){
-  if(typeof value === 'number') return Number.isFinite(value) && value >= 0 ? value : null;
-  const raw = String(value ?? '').trim();
-  if(!raw || !/^(?:R\\$\\s*)?[\\d.,\\s]+$/.test(raw)) return null;
-  let n = raw.replace(/R\\$|\\s/g,'');
-  if(n.includes(',') && n.includes('.')) n = n.replace(/\\./g,'').replace(',','.');
-  else if(n.includes(',')) n = n.replace(',','.');
-  const result = Number(n);
-  return Number.isFinite(result) && result >= 0 ? result : null;
-}
-function getValorVenda(lead){
-  const explicit = parseValorVenda(lead.valor_venda);
-  return explicit !== null ? explicit : parseValorVenda(lead.obs);
-}
-const moedaBR = value => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value);
-function safeHTML(value){
-  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-}
 function render(){
   populateOrigemFilter();
   const filtered = getFiltered();
@@ -781,7 +777,7 @@ function render(){
       </td>
       <td data-label="Criado em">${fmtDate(l.data_criacao)}</td>
       <td data-label="Origem">${l.origem ? `<span class="badge badge-origem">${l.origem}</span>` : '—'}</td>
-      <td data-label="Valor de Venda">${getValorVenda(l) !== null ? moedaBR(getValorVenda(l)) : '—'}</td>
+      <td class="cell-obs" data-label="Observações" title="${(l.obs||'').replace(/"/g,'&quot;')}">${l.obs ? `<div class="obs-clamp">${l.obs}</div>` : '—'}</td>
       <td data-label="Status"><span class="badge ${statusClass}"><span class="dot"></span>${l.status || 'N/D'}</span></td>
       <td data-label="Pagamento">${['Cartão','Pix','Boleto'].includes(l.metodo_pagamento) ? l.metodo_pagamento : '—'}</td>
       <td data-label="Ações">
@@ -797,12 +793,6 @@ function render(){
     tbody.appendChild(tr);
   });
 
-  const vendas = leads.filter(l=>l.status==='Venda Finalizada');
-  const vendasComValor = vendas.filter(l=>getValorVenda(l)!==null);
-  const receita = vendasComValor.reduce((sum,l)=>sum+getValorVenda(l),0);
-  document.getElementById('stat-receita').textContent = moedaBR(receita);
-  document.getElementById('stat-qtd-vendas').textContent = vendas.length;
-  document.getElementById('stat-ticket').textContent = moedaBR(vendasComValor.length ? receita/vendasComValor.length : 0);
   document.getElementById('stat-total').textContent = leads.length;
   document.getElementById('stat-quente').textContent = leads.filter(l=>l.status==='Demonstrou interesse').length;
   document.getElementById('stat-negociacao').textContent = leads.filter(l=>l.status==='Em negociação'||l.status==='Em contato').length;
@@ -822,7 +812,7 @@ function openModal(lead){
   document.getElementById('f-data').value = lead?.data_criacao || '';
   document.getElementById('f-origem').value = lead?.origem || '';
   document.getElementById('f-obs').value = lead?.obs || '';
-  document.getElementById('f-valor').value = lead ? (getValorVenda(lead) ?? '') : '';
+  document.getElementById('f-valor-venda').value = lead?.valor_venda != null ? Number(lead.valor_venda).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
   document.getElementById('f-pagamento').value = lead?.metodo_pagamento || '';
   selectedStatus = lead?.status || null;
   updateStatusPicker();
@@ -846,6 +836,30 @@ document.getElementById('f-telefone').addEventListener('input', (e)=>{
   e.target.value = maskPhone(e.target.value);
 });
 
+const resultsOverlay = document.getElementById('results-overlay');
+const brl = n => Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+document.getElementById('btn-results').addEventListener('click',()=>{
+  const sales=leads.filter(l=>l.status==='Venda Finalizada');
+  const known=sales.filter(l=>l.valor_venda!==null && l.valor_venda!==undefined && l.valor_venda!=='' && Number.isFinite(Number(l.valor_venda)));
+  const total=known.reduce((sum,l)=>sum+Number(l.valor_venda),0);
+  document.getElementById('result-total').textContent=brl(total);
+  document.getElementById('result-count').textContent=sales.length;
+  document.getElementById('result-ticket').textContent=known.length?brl(total/known.length):'—';
+  document.getElementById('results-detail').textContent=known.length+' venda(s) com valor preenchido de '+sales.length+' finalizada(s).';
+  const tbody=document.getElementById('results-sales-body');
+  tbody.replaceChildren();
+  sales.forEach(l=>{
+    const tr=document.createElement('tr');
+    const values=[l.nome||'Sem nome',l.data_criacao||'—',l.origem||'—',l.metodo_pagamento||'—',
+      l.valor_venda==null||l.valor_venda===''?'Não informado':brl(l.valor_venda)];
+    values.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;td.setAttribute('data-label',['Cliente','Data','Origem','Pagamento','Valor de venda'][i]);tr.appendChild(td);});
+    tbody.appendChild(tr);
+  });
+  if(!sales.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=5;td.textContent='Nenhuma venda finalizada cadastrada.';tr.appendChild(td);tbody.appendChild(tr);}
+  resultsOverlay.classList.add('open');
+});
+document.getElementById('results-close').addEventListener('click',()=>resultsOverlay.classList.remove('open'));
+resultsOverlay.addEventListener('click',e=>{if(e.target===resultsOverlay)resultsOverlay.classList.remove('open');});
 document.getElementById('btn-new').addEventListener('click', ()=>openModal(null));
 document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('btn-cancel').addEventListener('click', closeModal);
@@ -861,10 +875,21 @@ document.getElementById('btn-save').addEventListener('click', async ()=>{
     data_criacao: document.getElementById('f-data').value,
     origem: document.getElementById('f-origem').value.trim(),
     obs: document.getElementById('f-obs').value.trim(),
-    valor_venda: document.getElementById('f-valor').value === '' ? null : Number(document.getElementById('f-valor').value),
     status: selectedStatus,
     metodo_pagamento: document.getElementById('f-pagamento').value
   };
+  const rawVenda = document.getElementById('f-valor-venda').value.trim();
+  if(rawVenda){
+    const parsed = Number(rawVenda.replace(/\\s/g,'').replace(/R\\$/g,'').replace(/\\./g,'').replace(',','.'));
+    if(!Number.isFinite(parsed) || parsed < 0){ toast('Informe um valor de venda válido','danger'); return; }
+    payload.valor_venda = parsed;
+  }else if(!editingId){
+    payload.valor_venda = null;
+  }else{
+    // Não apagar valores existentes quando o campo vier vazio.
+    const old = leads.find(l=>l.id===editingId);
+    if(old?.valor_venda == null) payload.valor_venda = null;
+  }
   const saveBtn = document.getElementById('btn-save');
   saveBtn.disabled = true;
   try{
@@ -921,13 +946,12 @@ document.getElementById('btn-export').addEventListener('click', ()=>{
     'TELEFONE': l.telefone || '',
     'CONTA CRIADA EM': l.data_criacao ? fmtDate(l.data_criacao) : '',
     'ORIGEM': l.origem || '',
-    'VALOR DE VENDA': getValorVenda(l) ?? '',
     'OBS': l.obs || '',
     'STATUS': l.status || '',
     'MÉTODO DE PAGAMENTO': l.metodo_pagamento || ''
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:30},{wch:30},{wch:18},{wch:16},{wch:16},{wch:18},{wch:45},{wch:16},{wch:22}];
+  ws['!cols'] = [{wch:30},{wch:30},{wch:18},{wch:16},{wch:16},{wch:45},{wch:16},{wch:22}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Leads');
   const stamp = new Date().toISOString().slice(0,10);
@@ -971,7 +995,6 @@ document.getElementById('file-import').addEventListener('change', (e)=>{
           data_criacao: isoDate,
           origem: String(get('ORIGEM','Origem')||'').trim(),
           obs: String(get('OBS','Obs','Observações')||'').trim(),
-          valor_venda: parseValorVenda(get('VALOR DE VENDA','Valor de Venda','valor_venda','OBS','Obs','Observações')),
           status: statusRaw || oldNivelMap[nivelRaw] || null,
           metodo_pagamento: ({cartao:'Cartão', pix:'Pix', boleto:'Boleto'})[String(get('MÉTODO DE PAGAMENTO','METODO DE PAGAMENTO','Método de pagamento','Pagamento','metodo_pagamento')||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()] || ''
         };
