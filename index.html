@@ -295,13 +295,6 @@
     .obs-clamp{-webkit-line-clamp:unset; display:block;}
     .actions-cell{justify-content:flex-end;}
   }
-
-  .sales-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:22px}
-  .sales-panel{background:#fff;border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:20px}
-  .sales-panel h2{font-size:17px;margin:0 0 18px}.sales-number{font-size:27px;font-weight:800;color:var(--blue)}
-  .sales-table{min-width:780px}.sales-table td,.sales-table th{padding:12px 14px}
-  .sales-bar{height:10px;background:var(--blue-050);border-radius:10px;overflow:hidden}.sales-bar span{display:block;height:100%;background:var(--blue)}
-  .sales-filter{padding:9px;border:1px solid var(--border);border-radius:8px;background:#fff;margin:0 10px 16px 0}
 </style>
 </head>
 <body>
@@ -332,11 +325,11 @@
 <main>
   <div class="page-head">
     <div>
-      <h1 id="page-title">Leads</h1>
+      <h1>Leads</h1>
     </div>
   </div>
 
-  <section class="stats" id="leads-stats">
+  <section class="stats">
     <div class="stat-card">
       <div class="stat-top"><span class="stat-diamond" style="background:var(--blue);"></span><span class="stat-label">Total de leads</span></div>
       <div class="stat-value" id="stat-total">0</div>
@@ -369,8 +362,13 @@
       <div class="stat-sub">Leads sem interesse</div>
     </div>
   </section>
+  <section class="stats" aria-label="Resultados de Venda">
+    <div class="stat-card"><div class="stat-label">Total vendido</div><div class="stat-value" id="stat-receita">R$ 0,00</div><div class="stat-sub">Vendas finalizadas com valor registrado</div></div>
+    <div class="stat-card"><div class="stat-label">Quantidade de vendas</div><div class="stat-value" id="stat-qtd-vendas">0</div><div class="stat-sub">Leads com venda finalizada</div></div>
+    <div class="stat-card"><div class="stat-label">Ticket médio</div><div class="stat-value" id="stat-ticket">R$ 0,00</div><div class="stat-sub">Total vendido / vendas com valor</div></div>
+  </section>
 
-  <div class="toolbar" id="leads-toolbar">
+  <div class="toolbar">
     <div class="search-box">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input type="text" id="search" placeholder="Buscar por nome, email ou telefone...">
@@ -386,7 +384,6 @@
       <option value="Sem interesse">Sem interesse</option>
     </select>
     <div class="spacer"></div>
-    <button class="btn btn-primary" id="btn-sales" type="button">Visualizar resultados de venda</button>
     <button class="btn btn-outline" id="btn-import">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
       Importar Excel
@@ -402,8 +399,7 @@
     <input type="file" id="file-import" accept=".xlsx,.xls" style="display:none;">
   </div>
 
-  <section id="sales-view" style="display:none"></section>
-  <div class="table-card" id="leads-table">
+  <div class="table-card">
     <div class="table-scroll">
       <table>
         <thead>
@@ -412,7 +408,7 @@
             <th>Contato</th>
             <th data-sort="data_criacao">Conta criada em <span class="sort-arrow">▾</span></th>
             <th data-sort="origem">Origem <span class="sort-arrow">▾</span></th>
-            <th>Observações</th>
+            <th data-sort="valor_venda">Valor de Venda <span class="sort-arrow">▾</span></th>
             <th data-sort="status">Status <span class="sort-arrow">▾</span></th>
             <th data-sort="metodo_pagamento">Pagamento <span class="sort-arrow">▾</span></th>
             <th style="width:80px;">Ações</th>
@@ -428,7 +424,7 @@
     </div>
   </div>
 
-  <footer>Ativação Tec · powered by SGA Soft — dados salvos localmente neste navegador.</footer>
+  <footer>Ativação Tec · powered by SGA Soft — dados sincronizados quando o Firebase está conectado; caso contrário, armazenados neste navegador.</footer>
 </main>
 
 <!-- Modal -->
@@ -471,14 +467,18 @@
         <label for="f-pagamento">Método de pagamento</label>
         <select id="f-pagamento">
           <option value="">Não informado</option>
-          <option value="Cartão de crédito">Cartão de crédito</option>
+          <option value="Cartão">Cartão</option>
           <option value="Pix">Pix</option>
           <option value="Boleto">Boleto</option>
         </select>
       </div>
       <div class="field">
-        <label>Observações</label>
-        <textarea id="f-obs" placeholder="Anotações sobre o contato..."></textarea>
+        <label>Valor de Venda (R$)</label>
+        <input type="number" id="f-valor" min="0" step="0.01" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Observações internas (preservadas)</label>
+        <textarea id="f-obs" placeholder="Histórico e anotações do lead..."></textarea>
       </div>
       <div class="field">
         <label>Status</label>
@@ -670,59 +670,7 @@ function initApp(){
   }
 }
 
-
-/* Painel integrado de resultados de venda */
-let salesOpen=false;
-function moneyBR(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
-function numberBR(v){return Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:2});}
-function parseMoney(v){
- if(typeof v==='number')return Number.isFinite(v)?v:0;
- let t=String(v??'').replace(/[^\d,.-]/g,'');
- if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');
- return Number(t)||0;
-}
-function leadValue(l){for(const k of ['valor_venda','valor','valor_pago','valor_final','valor_total','faturamento','preco','preço','total'])if(l[k]!==undefined&&l[k]!==null&&l[k]!=='')return parseMoney(l[k]);return 0;}
-function leadDiscount(l){
- for(const k of ['percentual_desconto','porcentagem_desconto','desconto_percentual','desconto_pct'])if(l[k]!==undefined&&l[k]!=='')return parseMoney(l[k]);
- const d=l.desconto;
- if(typeof d==='string'&&d.includes('%'))return parseMoney(d);
- const original=parseMoney(l.valor_original||l.valor_bruto||l.preco_original);
- const final=leadValue(l);
- if(original>0&&final>=0&&final<=original)return (original-final)/original*100;
- return null;
-}
-function saleDate(l){return String(l.data_venda||l.data_pagamento||l.data_criacao||'').slice(0,10);}
-function renderSales(){
- const rows=leads.filter(l=>l.status==='Venda Finalizada');
- const months=[...new Set(rows.map(l=>saleDate(l).slice(0,7)).filter(x=>/^\d{4}-\d{2}$/.test(x)))].sort().reverse();
- const root=document.getElementById('sales-view');const chosen=root.querySelector('#sales-month')?.value||'';
- const data=chosen?rows.filter(l=>saleDate(l).startsWith(chosen)):rows;
- const total=data.reduce((a,l)=>a+leadValue(l),0), ticket=data.length?total/data.length:0;
- const discounted=data.map(leadDiscount).filter(v=>v!==null);
- const avgDiscount=discounted.length?discounted.reduce((a,b)=>a+b,0)/discounted.length:null;
- const group=(key)=>{const m={};data.forEach(l=>{const k=key(l)||'Não informado';if(!m[k])m[k]={count:0,value:0};m[k].count++;m[k].value+=leadValue(l)});return Object.entries(m).sort((a,b)=>b[1].count-a[1].count)};
- const breakdown=(title,arr)=>`<div class="sales-panel"><h2>${title}</h2>${arr.length?arr.map(([name,v])=>`<div style="display:flex;justify-content:space-between;gap:12px;margin:12px 0 5px"><strong>${escapeSales(name)}</strong><span>${v.count} venda(s) · ${moneyBR(v.value)}</span></div><div class="sales-bar"><span style="width:${data.length?100*v.count/data.length:0}%"></span></div>`).join(''):'Nenhuma venda no período.'}</div>`;
- root.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px"><div><h2 style="margin:0">Resultados de Venda</h2><p style="color:var(--ink-soft)">Análise das vendas finalizadas</p></div><label>Período: <select id="sales-month" class="sales-filter"><option value="">Todo o período</option>${months.map(m=>`<option value="${m}" ${chosen===m?'selected':''}>${m.slice(5,7)}/${m.slice(0,4)}</option>`).join('')}</select></label></div>
- <div class="sales-grid"><div class="stat-card"><div class="stat-label">Faturamento</div><div class="sales-number">${moneyBR(total)}</div></div><div class="stat-card"><div class="stat-label">Vendas finalizadas</div><div class="sales-number">${data.length}</div></div><div class="stat-card"><div class="stat-label">Ticket médio</div><div class="sales-number">${moneyBR(ticket)}</div></div><div class="stat-card"><div class="stat-label">Desconto médio (%)</div><div class="sales-number">${avgDiscount===null?'—':numberBR(avgDiscount)+'%'}</div></div></div>
- <div class="grid-sales" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">${breakdown('Origem das vendas',group(l=>l.origem))}${breakdown('Formas de pagamento',group(l=>paymentLabel(l.metodo_pagamento)))}</div>
- <div class="sales-panel"><h2>Detalhamento de Venda</h2><div class="table-scroll"><table class="sales-table"><thead><tr><th>Cliente</th><th>Data de cadastro</th><th>Origem</th><th>Pagamento</th><th>Valor da venda</th><th>Porcentagem de desconto (%)</th></tr></thead><tbody>${data.length?data.map(l=>`<tr><td>${escapeSales(l.nome||'—')}</td><td>${fmtDate(l.data_criacao)}</td><td>${escapeSales(l.origem||'—')}</td><td>${paymentLabel(l.metodo_pagamento)}</td><td>${moneyBR(leadValue(l))}</td><td>${leadDiscount(l)===null?'—':numberBR(leadDiscount(l))+'%'}</td></tr>`).join(''):'<tr><td colspan="6">Nenhuma venda finalizada neste período.</td></tr>'}</tbody></table></div></div>`;
- root.querySelector('#sales-month').addEventListener('change',renderSales);
-}
-function escapeSales(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function toggleSales(){
- salesOpen=!salesOpen;
- document.getElementById('sales-view').style.display=salesOpen?'block':'none';
- document.getElementById('leads-stats').style.display=salesOpen?'none':'';
- document.getElementById('leads-table').style.display=salesOpen?'none':'';
- for(const el of document.querySelectorAll('#leads-toolbar > *:not(#btn-sales)'))el.style.display=salesOpen?'none':'';
- document.getElementById('page-title').textContent=salesOpen?'Resultados de Venda':'Leads';
- document.getElementById('btn-sales').textContent=salesOpen?'Voltar Leads':'Visualizar resultados de venda';
- if(salesOpen)renderSales();
-}
-document.getElementById('btn-sales').addEventListener('click',toggleSales);
-
 /* ================= HELPERS ================= */
-function paymentLabel(v){ return v === 'Cartão' ? 'Cartão de crédito' : (['Cartão de crédito','Pix','Boleto'].includes(v) ? v : '—'); }
 function fmtDate(iso){
   if(!iso) return '—';
   const [y,m,d] = iso.split('-');
@@ -783,8 +731,8 @@ function getFiltered(){
   });
   if(sortState.col){
     out.sort((a,b)=>{
-      let va = a[sortState.col] ?? '';
-      let vb = b[sortState.col] ?? '';
+      let va = sortState.col === 'valor_venda' ? (getValorVenda(a) ?? -1) : (a[sortState.col] ?? '');
+      let vb = sortState.col === 'valor_venda' ? (getValorVenda(b) ?? -1) : (b[sortState.col] ?? '');
       if(va < vb) return -1*sortState.dir;
       if(va > vb) return 1*sortState.dir;
       return 0;
@@ -796,8 +744,25 @@ function getFiltered(){
   return out;
 }
 
+function parseValorVenda(value){
+  if(typeof value === 'number') return Number.isFinite(value) && value >= 0 ? value : null;
+  const raw = String(value ?? '').trim();
+  if(!raw || !/^(?:R\\$\\s*)?[\\d.,\\s]+$/.test(raw)) return null;
+  let n = raw.replace(/R\\$|\\s/g,'');
+  if(n.includes(',') && n.includes('.')) n = n.replace(/\\./g,'').replace(',','.');
+  else if(n.includes(',')) n = n.replace(',','.');
+  const result = Number(n);
+  return Number.isFinite(result) && result >= 0 ? result : null;
+}
+function getValorVenda(lead){
+  const explicit = parseValorVenda(lead.valor_venda);
+  return explicit !== null ? explicit : parseValorVenda(lead.obs);
+}
+const moedaBR = value => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value);
+function safeHTML(value){
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
 function render(){
-  if(salesOpen)renderSales();
   populateOrigemFilter();
   const filtered = getFiltered();
   const tbody = document.getElementById('tbody');
@@ -816,9 +781,9 @@ function render(){
       </td>
       <td data-label="Criado em">${fmtDate(l.data_criacao)}</td>
       <td data-label="Origem">${l.origem ? `<span class="badge badge-origem">${l.origem}</span>` : '—'}</td>
-      <td class="cell-obs" data-label="Observações" title="${(l.obs||'').replace(/"/g,'&quot;')}">${l.obs ? `<div class="obs-clamp">${l.obs}</div>` : '—'}</td>
+      <td data-label="Valor de Venda">${getValorVenda(l) !== null ? moedaBR(getValorVenda(l)) : '—'}</td>
       <td data-label="Status"><span class="badge ${statusClass}"><span class="dot"></span>${l.status || 'N/D'}</span></td>
-      <td data-label="Pagamento">${paymentLabel(l.metodo_pagamento)}</td>
+      <td data-label="Pagamento">${['Cartão','Pix','Boleto'].includes(l.metodo_pagamento) ? l.metodo_pagamento : '—'}</td>
       <td data-label="Ações">
         <div class="actions-cell">
           <button class="icon-btn" data-edit="${l.id}" title="Editar">
@@ -832,6 +797,12 @@ function render(){
     tbody.appendChild(tr);
   });
 
+  const vendas = leads.filter(l=>l.status==='Venda Finalizada');
+  const vendasComValor = vendas.filter(l=>getValorVenda(l)!==null);
+  const receita = vendasComValor.reduce((sum,l)=>sum+getValorVenda(l),0);
+  document.getElementById('stat-receita').textContent = moedaBR(receita);
+  document.getElementById('stat-qtd-vendas').textContent = vendas.length;
+  document.getElementById('stat-ticket').textContent = moedaBR(vendasComValor.length ? receita/vendasComValor.length : 0);
   document.getElementById('stat-total').textContent = leads.length;
   document.getElementById('stat-quente').textContent = leads.filter(l=>l.status==='Demonstrou interesse').length;
   document.getElementById('stat-negociacao').textContent = leads.filter(l=>l.status==='Em negociação'||l.status==='Em contato').length;
@@ -851,7 +822,8 @@ function openModal(lead){
   document.getElementById('f-data').value = lead?.data_criacao || '';
   document.getElementById('f-origem').value = lead?.origem || '';
   document.getElementById('f-obs').value = lead?.obs || '';
-  document.getElementById('f-pagamento').value = lead?.metodo_pagamento === 'Cartão' ? 'Cartão de crédito' : (lead?.metodo_pagamento || '');
+  document.getElementById('f-valor').value = lead ? (getValorVenda(lead) ?? '') : '';
+  document.getElementById('f-pagamento').value = lead?.metodo_pagamento || '';
   selectedStatus = lead?.status || null;
   updateStatusPicker();
   overlay.classList.add('open');
@@ -889,6 +861,7 @@ document.getElementById('btn-save').addEventListener('click', async ()=>{
     data_criacao: document.getElementById('f-data').value,
     origem: document.getElementById('f-origem').value.trim(),
     obs: document.getElementById('f-obs').value.trim(),
+    valor_venda: document.getElementById('f-valor').value === '' ? null : Number(document.getElementById('f-valor').value),
     status: selectedStatus,
     metodo_pagamento: document.getElementById('f-pagamento').value
   };
@@ -948,12 +921,13 @@ document.getElementById('btn-export').addEventListener('click', ()=>{
     'TELEFONE': l.telefone || '',
     'CONTA CRIADA EM': l.data_criacao ? fmtDate(l.data_criacao) : '',
     'ORIGEM': l.origem || '',
+    'VALOR DE VENDA': getValorVenda(l) ?? '',
     'OBS': l.obs || '',
     'STATUS': l.status || '',
     'MÉTODO DE PAGAMENTO': l.metodo_pagamento || ''
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:30},{wch:30},{wch:18},{wch:16},{wch:16},{wch:45},{wch:16},{wch:22}];
+  ws['!cols'] = [{wch:30},{wch:30},{wch:18},{wch:16},{wch:16},{wch:18},{wch:45},{wch:16},{wch:22}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Leads');
   const stamp = new Date().toISOString().slice(0,10);
@@ -997,8 +971,9 @@ document.getElementById('file-import').addEventListener('change', (e)=>{
           data_criacao: isoDate,
           origem: String(get('ORIGEM','Origem')||'').trim(),
           obs: String(get('OBS','Obs','Observações')||'').trim(),
+          valor_venda: parseValorVenda(get('VALOR DE VENDA','Valor de Venda','valor_venda','OBS','Obs','Observações')),
           status: statusRaw || oldNivelMap[nivelRaw] || null,
-          metodo_pagamento: ({cartao:'Cartão de crédito', 'cartao de credito':'Cartão de crédito', pix:'Pix', boleto:'Boleto'})[String(get('MÉTODO DE PAGAMENTO','METODO DE PAGAMENTO','Método de pagamento','Pagamento','metodo_pagamento')||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()] || ''
+          metodo_pagamento: ({cartao:'Cartão', pix:'Pix', boleto:'Boleto'})[String(get('MÉTODO DE PAGAMENTO','METODO DE PAGAMENTO','Método de pagamento','Pagamento','metodo_pagamento')||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()] || ''
         };
       }).filter(l=>l.nome || l.email || l.telefone);
 
