@@ -298,6 +298,13 @@
 </style>
 <style>
 #nav-results{height:34px;font-size:12px}.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}.dash-panel{padding:22px;margin-bottom:20px}.dash-panel h2{font-size:17px;margin:0 0 18px}.dash-bar-row{margin:12px 0}.dash-bar-label{display:flex;justify-content:space-between;gap:12px;font-size:13px;margin-bottom:5px}.dash-track{height:10px;background:var(--bg);border-radius:9px;overflow:hidden}.dash-fill{height:100%;background:var(--blue);border-radius:9px}.dash-panel .stat-sub{margin:20px 0 0;line-height:1.6}@media(max-width:760px){.dash-grid{grid-template-columns:1fr}#nav-results{white-space:normal;height:auto;min-height:34px}}
+.sales-card-stack{display:flex;flex-direction:column;gap:10px;min-width:0}
+.sales-card-stack .stat-card{flex:1}
+.sales-card-stack #nav-results{height:auto;min-height:40px;padding:9px 8px;white-space:normal;text-align:center;font-size:12px;line-height:1.3;width:100%}
+.sales-card-stack .stat-card{min-height:126px}
+.dash-line-chart{width:100%;height:auto;display:block;overflow:visible}
+.dash-chart-wrap{padding:8px 4px 0}
+.dash-chart-note{font-size:12px;color:var(--ink-soft);line-height:1.5;margin-top:12px}
 </style>
 </head>
 <body>
@@ -310,7 +317,7 @@
         <span>Tráfego pago &amp; captação</span>
       </div>
     </div>
-    <div class="header-right"><button type="button" class="btn btn-primary" id="nav-results">Visualizar resultados de vendas</button>
+    <div class="header-right">
       <div class="conn-badge">
         <span class="conn-dot" id="conn-dot"></span>
         <span id="conn-text">Conectando...</span>
@@ -332,11 +339,12 @@
       <div class="stat-value" id="stat-total">0</div>
       <div class="stat-sub">Cadastrados até agora</div>
     </div>
+    <div class="sales-card-stack"><button type="button" class="btn btn-primary" id="nav-results">Visualizar resultados de vendas</button>
     <div class="stat-card">
       <div class="stat-top"><span class="stat-diamond" style="background:var(--green);"></span><span class="stat-label">Venda Finalizada</span></div>
       <div class="stat-value" id="stat-venda">0</div>
       <div class="stat-sub">Negócios fechados</div>
-    </div>
+    </div></div>
     <div class="stat-card">
       <div class="stat-top"><span class="stat-diamond" style="background:var(--green);"></span><span class="stat-label">Demonstrou interesse</span></div>
       <div class="stat-value" id="stat-quente">0</div>
@@ -424,6 +432,7 @@
  <div class="page-head"><div><h1>Resultados de vendas</h1><p>Relatório gerencial • dados lidos diretamente dos leads existentes</p></div><button class="btn btn-outline" id="nav-back">← Voltar aos leads</button></div>
  <div class="toolbar"><select class="filter" id="dash-origin"><option value="">Todas as origens</option></select><select class="filter" id="dash-month"><option value="">Todos os períodos de cadastro</option></select><button class="btn btn-green" id="dash-csv">Exportar relatório CSV</button></div>
  <section class="stats"><div class="stat-card"><div class="stat-label">Vendas finalizadas</div><div class="stat-value" id="dash-count">0</div></div><div class="stat-card"><div class="stat-label">Valor negociado identificado</div><div class="stat-value" id="dash-total">—</div></div><div class="stat-card"><div class="stat-label">Ticket médio identificado</div><div class="stat-value" id="dash-ticket">—</div></div><div class="stat-card"><div class="stat-label">Desconto médio (base R$ 600)</div><div class="stat-value" id="dash-discount">—</div></div></section>
+ <section class="table-card dash-panel"><h2>Evolução mensal de vendas — últimos 6 meses</h2><div id="dash-line" class="dash-chart-wrap"></div><p class="dash-chart-note">Valores identificados em vendas finalizadas, agrupados pelo mês de cadastro do lead. A data de cadastro pode não ser a data da venda. Vendas sem data ou sem valor identificado não entram no gráfico.</p></section>
  <div class="dash-grid"><section class="table-card dash-panel"><h2>Receita por forma de pagamento</h2><div id="dash-payments"></div></section><section class="table-card dash-panel"><h2>Receita por origem</h2><div id="dash-origins"></div></section></div>
  <section class="table-card dash-panel"><h2>Detalhamento das vendas finalizadas</h2><div class="table-scroll"><table><thead><tr><th>Cliente</th><th>Origem</th><th>Data de cadastro</th><th>Pagamento</th><th>Valor identificado</th><th>Desconto estimado (%) — base R$ 600</th></tr></thead><tbody id="dash-rows"></tbody></table></div><p class="stat-sub">Valores são extraídos de campos monetários existentes ou de anotações com indicação de R$. Ausência de valor não equivale a venda de R$ 0. Preço de referência: R$ 600 por plano trimestral, conforme informado. Datas de cadastro não representam necessariamente a data da venda. Este painel é somente leitura e não grava no banco.</p></section>
 </main>
@@ -991,7 +1000,21 @@ function parseMoney(v){if(typeof v==='number')return Number.isFinite(v)?v:null;l
 function sales(){return (typeof leads!=='undefined'?leads:[]).filter(l=>String(l.status||'').trim().toLowerCase()==='venda finalizada');}
 function refreshOptions(id,values){const el=$(id),v=el.value;el.innerHTML='<option value="">'+(id==='dash-origin'?'Todas as origens':'Todos os períodos de cadastro')+'</option>'+values.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');el.value=values.includes(v)?v:'';}
 function bars(id,items){const max=Math.max(1,...items.map(x=>x[1]));$(id).innerHTML=items.length?items.map(([name,value])=>'<div class="dash-bar-row"><div class="dash-bar-label"><span>'+esc(name)+'</span><strong>'+brl(value)+'</strong></div><div class="dash-track"><div class="dash-fill" style="width:'+(100*value/max)+'%"></div></div></div>').join(''):'<p class="stat-sub">Nenhum valor financeiro identificado.</p>';}
-function update(){const all=sales();refreshOptions('dash-origin',[...new Set(all.map(l=>l.origem||'Não informada'))].sort());refreshOptions('dash-month',[...new Set(all.map(l=>String(l.data_criacao||'').slice(0,7)).filter(x=>/^\d{4}-\d{2}$/.test(x)))].sort());const origin=$('dash-origin').value,month=$('dash-month').value;const data=all.filter(l=>(!origin||(l.origem||'Não informada')===origin)&&(!month||String(l.data_criacao||'').startsWith(month)));const priced=data.map(l=>({...l,_amount:money(l)}));const valid=priced.filter(l=>l._amount!==null);const total=valid.reduce((a,l)=>a+l._amount,0);$('dash-count').textContent=data.length;$('dash-total').textContent=valid.length?brl(total):'Não informado';$('dash-ticket').textContent=valid.length?brl(total/valid.length):'Não informado';$('dash-discount').textContent=valid.length?((1-total/(valid.length*600))*100).toFixed(2).replace('.',',')+'%':'Não informado';
+function renderMonthlyChart(data){
+ const now=new Date(), months=[];
+ for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),label:d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}).replace('.',''),value:0,count:0});}
+ data.forEach(l=>{const key=String(l.data_criacao||'').slice(0,7),m=months.find(x=>x.key===key),v=money(l);if(m&&v!==null){m.value+=v;m.count++;}});
+ const W=960,H=300,left=92,right=30,top=30,bottom=58,pw=W-left-right,ph=H-top-bottom;
+ const max=Math.max(1,...months.map(m=>m.value)), ceiling=max*1.14;
+ const x=i=>left+i*pw/5,y=v=>top+ph-(v/ceiling)*ph;
+ const points=months.map((m,i)=>[x(i),y(m.value)]);
+ const line=points.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+ const area=line+' L '+x(5)+' '+(top+ph)+' L '+x(0)+' '+(top+ph)+' Z';
+ const grid=[0,.25,.5,.75,1].map(f=>{const yy=y(ceiling*f);return '<line x1="'+left+'" y1="'+yy+'" x2="'+(W-right)+'" y2="'+yy+'" stroke="#E4E4E7" stroke-dasharray="4 5"/><text x="'+(left-12)+'" y="'+(yy+4)+'" text-anchor="end" font-size="12" fill="#75757A">'+esc(brl(ceiling*f))+'</text>';}).join('');
+ const dots=months.map((m,i)=>'<circle cx="'+x(i)+'" cy="'+y(m.value)+'" r="5" fill="#1876D0" stroke="white" stroke-width="2"><title>'+esc(m.label+': '+brl(m.value)+' ('+m.count+' venda(s) com valor)')+'</title></circle><text x="'+x(i)+'" y="'+(H-22)+'" text-anchor="middle" font-size="13" fill="#75757A">'+esc(m.label)+'</text>').join('');
+ $('dash-line').innerHTML='<svg class="dash-line-chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Gráfico de linha de vendas dos últimos seis meses"><path d="'+area+'" fill="#EAF3FC"/>'+grid+'<path d="'+line+'" fill="none" stroke="#1876D0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>'+dots+'</svg>';
+}
+function update(){const all=sales();refreshOptions('dash-origin',[...new Set(all.map(l=>l.origem||'Não informada'))].sort());refreshOptions('dash-month',[...new Set(all.map(l=>String(l.data_criacao||'').slice(0,7)).filter(x=>/^\d{4}-\d{2}$/.test(x)))].sort());const origin=$('dash-origin').value,month=$('dash-month').value;const data=all.filter(l=>(!origin||(l.origem||'Não informada')===origin)&&(!month||String(l.data_criacao||'').startsWith(month)));renderMonthlyChart(all.filter(l=>!origin||(l.origem||'Não informada')===origin));const priced=data.map(l=>({...l,_amount:money(l)}));const valid=priced.filter(l=>l._amount!==null);const total=valid.reduce((a,l)=>a+l._amount,0);$('dash-count').textContent=data.length;$('dash-total').textContent=valid.length?brl(total):'Não informado';$('dash-ticket').textContent=valid.length?brl(total/valid.length):'Não informado';$('dash-discount').textContent=valid.length?((1-total/(valid.length*600))*100).toFixed(2).replace('.',',')+'%':'Não informado';
  const groups=(key)=>{const m=new Map();valid.forEach(l=>{const k=l[key]||'Não informado';m.set(k,(m.get(k)||0)+l._amount)});return [...m].sort((a,b)=>b[1]-a[1])};bars('dash-payments',groups('metodo_pagamento'));bars('dash-origins',groups('origem'));
  $('dash-rows').innerHTML=priced.map(l=>'<tr><td data-label="Cliente">'+esc(l.nome||'—')+'</td><td data-label="Origem">'+esc(l.origem||'—')+'</td><td data-label="Cadastro">'+esc(fmtDate(l.data_criacao))+'</td><td data-label="Pagamento">'+esc(l.metodo_pagamento||'—')+'</td><td data-label="Valor">'+(l._amount===null?'Não informado':brl(l._amount))+'</td><td data-label="Desconto">'+(l._amount===null?'—':((600-l._amount)/600*100).toFixed(2).replace('.',',')+'%')+'</td></tr>').join('')||'<tr><td colspan="6">Nenhuma venda finalizada neste filtro.</td></tr>';
  window.__dashExport=()=>{const rows=[['Cliente','Origem','Cadastro','Tipo de pagamento','Valor','Desconto (%)']].concat(priced.map(l=>[l.nome||'',l.origem||'',fmtDate(l.data_criacao),l.metodo_pagamento||'',l._amount===null?'':l._amount,l._amount===null?'':((600-l._amount)/600*100).toFixed(2).replace('.',',')+'%']));const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='resultados_vendas_ativacao.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
