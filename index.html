@@ -309,7 +309,7 @@
   }
 </style>
 <style>
-.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}.dash-panel{padding:22px;margin-bottom:20px}.dash-panel h2{font-size:17px;margin:0 0 18px}.dash-bar-row{margin:12px 0}.dash-bar-label{display:flex;justify-content:space-between;gap:12px;font-size:13px;margin-bottom:5px}.dash-track{height:10px;background:var(--bg);border-radius:9px;overflow:hidden}.dash-fill{height:100%;background:var(--blue);border-radius:9px}.dash-panel .stat-sub{margin:20px 0 0;line-height:1.6}@media(max-width:760px){.dash-grid{grid-template-columns:1fr}#nav-results{white-space:normal;height:auto;min-height:34px}}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}.dash-panel{padding:22px;margin-bottom:20px}.dash-panel h2{font-size:17px;margin:0 0 18px}.dash-bar-row{margin:12px 0}.dash-bar-label{display:flex;justify-content:space-between;gap:12px;font-size:13px;margin-bottom:5px}.dash-bar-share{margin-inline-start:4px;color:var(--ink-soft);font-weight:600;white-space:nowrap}.dash-track{height:10px;background:var(--bg);border-radius:9px;overflow:hidden}.dash-fill{height:100%;background:var(--blue);border-radius:9px}.dash-panel .stat-sub{margin:20px 0 0;line-height:1.6}@media(max-width:760px){.dash-grid{grid-template-columns:1fr}#nav-results{white-space:normal;height:auto;min-height:34px}}
 .leads-stats{margin-top:52px}
 .sales-card-stack{position:relative;min-width:0}
 .sales-card-stack .stat-card{height:100%}
@@ -1078,7 +1078,17 @@ function money(l){
 function parseMoney(v){if(typeof v==='number')return Number.isFinite(v)?v:null;let t=String(v).replace(/[^\d.,-]/g,'');if(!t)return null;if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');else if((t.match(/\./g)||[]).length>1)t=t.replace(/\./g,'');const n=Number(t);return Number.isFinite(n)?n:null;}
 function sales(){return (typeof leads!=='undefined'?leads:[]).filter(l=>String(l.status||'').trim().toLowerCase()==='venda finalizada');}
 function refreshOptions(id,values){const el=$(id),v=el.value;el.innerHTML='<option value="">'+(id==='dash-origin'?'Todas as origens':'Todos os períodos de cadastro')+'</option>'+values.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');el.value=values.includes(v)?v:'';}
-function bars(id,items){const max=Math.max(1,...items.map(x=>x[1]));$(id).innerHTML=items.length?items.map(([name,value])=>'<div class="dash-bar-row"><div class="dash-bar-label"><span>'+esc(name)+'</span><strong>'+brl(value)+'</strong></div><div class="dash-track"><div class="dash-fill" style="width:'+(100*value/max)+'%"></div></div></div>').join(''):'<p class="stat-sub">Nenhum valor financeiro identificado.</p>';}
+const revenueShare=new Intl.NumberFormat('pt-BR',{style:'percent',maximumFractionDigits:2});
+function bars(id,items,total){
+  const max=Math.max(1,...items.map(([,value])=>value));
+  $(id).innerHTML=items.length?items.map(([name,value])=>{
+    const share=total===0?'—':revenueShare.format(value/total);
+    return '<div class="dash-bar-row"><div class="dash-bar-label"><span>'+esc(name)
+      +' <span class="dash-bar-share">'+share+'</span></span><strong>'+brl(value)
+      +'</strong></div><div class="dash-track"><div class="dash-fill" style="width:'
+      +(100*value/max)+'%"></div></div></div>';
+  }).join(''):'<p class="stat-sub">Nenhum valor financeiro identificado.</p>';
+}
 function renderMonthlyChart(data){
  const now=new Date(), months=[];
  for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),label:d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}).replace('.',''),value:0,count:0});}
@@ -1094,7 +1104,7 @@ function renderMonthlyChart(data){
  $('dash-line').innerHTML='<svg class="dash-line-chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Gráfico de linha de vendas dos últimos seis meses"><path d="'+area+'" fill="#EAF3FC"/>'+grid+'<path d="'+line+'" fill="none" stroke="#1876D0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>'+dots+'</svg>';
 }
 function update(){const all=sales();refreshOptions('dash-origin',[...new Set(all.map(l=>l.origem||'Não informada'))].sort());refreshOptions('dash-month',[...new Set(all.map(l=>String(l.data_criacao||'').slice(0,7)).filter(x=>/^\d{4}-\d{2}$/.test(x)))].sort());const origin=$('dash-origin').value,month=$('dash-month').value;const data=all.filter(l=>(!origin||(l.origem||'Não informada')===origin)&&(!month||String(l.data_criacao||'').startsWith(month)));renderMonthlyChart(all.filter(l=>!origin||(l.origem||'Não informada')===origin));const priced=data.map(l=>({...l,_amount:money(l)}));const valid=priced.filter(l=>l._amount!==null);const total=valid.reduce((a,l)=>a+l._amount,0);$('dash-count').textContent=data.length;$('dash-total').textContent=valid.length?brl(total):'Não informado';$('dash-ticket').textContent=valid.length?brl(total/valid.length):'Não informado';$('dash-discount').textContent=valid.length?((1-total/(valid.length*600))*100).toFixed(2).replace('.',',')+'%':'Não informado';
- const groups=(key)=>{const m=new Map();valid.forEach(l=>{const k=l[key]||'Não informado';m.set(k,(m.get(k)||0)+l._amount)});return [...m].sort((a,b)=>b[1]-a[1])};bars('dash-payments',groups('metodo_pagamento'));bars('dash-origins',groups('origem'));
+ const groups=(key)=>{const m=new Map();valid.forEach(l=>{const k=l[key]||'Não informado';m.set(k,(m.get(k)||0)+l._amount)});return [...m].sort((a,b)=>b[1]-a[1])};bars('dash-payments',groups('metodo_pagamento'),total);bars('dash-origins',groups('origem'),total);
  $('dash-rows').innerHTML=priced.map(l=>'<tr><td data-label="Cliente">'+esc(l.nome||'—')+'</td><td data-label="Origem">'+esc(l.origem||'—')+'</td><td data-label="Cadastro">'+esc(fmtDate(l.data_criacao))+'</td><td data-label="Pagamento">'+esc(l.metodo_pagamento||'—')+'</td><td data-label="Valor">'+(l._amount===null?'Não informado':brl(l._amount))+'</td><td data-label="Desconto">'+(l._amount===null?'—':((600-l._amount)/600*100).toFixed(2).replace('.',',')+'%')+'</td></tr>').join('')||'<tr><td colspan="6">Nenhuma venda finalizada neste filtro.</td></tr>';
  window.__dashExport=()=>{const rows=[['Cliente','Origem','Cadastro','Tipo de pagamento','Valor','Desconto (%)']].concat(priced.map(l=>[l.nome||'',l.origem||'',fmtDate(l.data_criacao),l.metodo_pagamento||'',l._amount===null?'':l._amount,l._amount===null?'':((600-l._amount)/600*100).toFixed(2).replace('.',',')+'%']));const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='resultados_vendas_ativacao.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 }
