@@ -153,6 +153,15 @@
   }
   .table-scroll{overflow-x:auto; max-width:100%;}
   #leads-view .table-scroll table{min-width:1200px;}
+  @media (min-width:761px){
+    #leads-view .lead-actions{
+      position:sticky; right:0; z-index:1; width:100px; min-width:100px;
+      padding-inline:12px; text-align:center; box-shadow:-1px 0 var(--border);
+    }
+    #leads-view td.lead-actions{background:var(--white); vertical-align:middle;}
+    #leads-view tr:hover td.lead-actions{background:var(--blue-050);}
+    #leads-view .lead-actions .actions-cell{justify-content:center;}
+  }
   .table-card{min-width:0;}
   table{width:100%; border-collapse:collapse; min-width:980px;}
   thead th{
@@ -280,6 +289,7 @@
 
     /* A tabela vira uma lista de cards no celular, para não cortar colunas */
     .table-scroll{overflow-x:visible;}
+    #leads-view .table-scroll table{min-width:0;}
     table{min-width:0; width:100%;}
     thead{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
     tbody, tr, td{display:block; width:100%;}
@@ -450,7 +460,7 @@
             <th data-sort="valor_venda">Valor da venda</th>
             <th data-sort="status">Status <span class="sort-arrow">▾</span></th>
             <th data-sort="metodo_pagamento">Tipo de pagamento <span class="sort-arrow">▾</span></th>
-            <th style="width:80px;">Ações</th>
+            <th class="lead-actions" scope="col">Ações</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -822,7 +832,7 @@ function render(){
       <td data-label="Valor da venda">${l.valor_venda !== undefined && l.valor_venda !== null && l.valor_venda !== '' ? Number(l.valor_venda).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}</td>
       <td data-label="Status"><span class="badge ${statusClass}"><span class="dot"></span>${l.status || 'N/D'}</span></td>
       <td data-label="Pagamento">${['Cartão','Pix','Boleto'].includes(l.metodo_pagamento) ? l.metodo_pagamento : '—'}</td>
-      <td data-label="Ações">
+      <td class="lead-actions" data-label="Ações">
         <div class="actions-cell">
           <button class="icon-btn" data-edit="${l.id}" title="Editar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
