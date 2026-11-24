@@ -310,19 +310,49 @@
 .dash-point .dash-tooltip rect{filter:drop-shadow(0 5px 10px rgba(18,90,156,.15))}.dash-chart-note{font-size:12px;color:var(--ink-soft);line-height:1.5;margin-top:12px}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-<style>body:not(.authenticated)>header,body:not(.authenticated)>main,body:not(.authenticated)>.overlay{display:none!important}#login-screen{min-height:100vh;display:grid;place-items:center;padding:24px}body.authenticated #login-screen{display:none}#login-form{width:min(100%,400px);background:white;padding:32px;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-md);display:grid;gap:16px}#login-error{color:var(--danger);font-size:13px}</style><style>.finance-nav{display:flex;gap:8px;flex-wrap:wrap}.finance-form{display:grid;gap:14px;padding:20px}.finance-form label{display:grid;gap:6px;font-weight:600}.finance-form input,.finance-form textarea{padding:10px;border:1px solid var(--border);border-radius:8px;width:100%;font:inherit}.finance-form textarea{min-height:90px}.finance-actions{display:flex;gap:8px;flex-wrap:wrap}.finance-dialog{border:1px solid var(--border);border-radius:12px;padding:24px;max-width:min(600px,90vw);width:100%}.finance-dialog p{white-space:pre-wrap;overflow-wrap:anywhere}.finance-dialog::backdrop{background:#0006}@media(max-width:700px){.finance-nav{width:100%}}</style></head>
+<style>body:not(.authenticated)>header,body:not(.authenticated)>main,body:not(.authenticated)>.overlay{display:none!important}#login-screen{min-height:100vh;display:grid;place-items:center;padding:24px}body.authenticated #login-screen{display:none}#login-form{width:min(100%,400px);background:white;padding:32px;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-md);display:grid;gap:16px}#login-error{color:var(--danger);font-size:13px}</style><style>.finance-nav{display:flex;gap:8px;flex-wrap:wrap}.finance-form{display:grid;gap:14px;padding:20px}.finance-form label{display:grid;gap:6px;font-weight:600}.finance-form input,.finance-form textarea{padding:10px;border:1px solid var(--border);border-radius:8px;width:100%;font:inherit}.finance-form textarea{min-height:90px}.finance-actions{display:flex;gap:8px;flex-wrap:wrap}.finance-dialog{border:1px solid var(--border);border-radius:12px;padding:24px;max-width:min(600px,90vw);width:100%}.finance-dialog p{white-space:pre-wrap;overflow-wrap:anywhere}.finance-dialog::backdrop{background:#0006}@media(max-width:700px){.finance-nav{width:100%}}</style>
+<style>
+  .topbar .topbar-inner{justify-content:flex-start;gap:16px}
+  .topbar .brand{flex:none}
+  .brand-logo{display:block;position:relative;overflow:hidden;width:174px;aspect-ratio:4.2}
+  .topbar .brand-logo img{position:absolute;top:0;left:-7.3%;width:116%;height:auto;max-width:none;transform:translateY(-26.5%);mix-blend-mode:multiply}
+  .topbar .finance-nav{margin-inline-start:auto;justify-content:flex-end;width:auto}
+  .topbar .finance-nav .btn{height:36px;padding:0 13px;font-size:13px;font-weight:600;white-space:nowrap}
+  .topbar .finance-nav .btn[aria-current="page"]{background:var(--blue);border-color:var(--blue);color:white}
+  .topbar .header-right{width:auto;flex:none}
+  #finance-editor{max-width:760px}
+  .finance-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 14px;padding:14px 16px}
+  .finance-form h2,.finance-form .finance-wide{grid-column:1/-1}
+  .finance-form h2{font-size:16px;margin:0}
+  .finance-form label{min-width:0;gap:4px;font-size:13px}
+  .finance-form input,.finance-form textarea{padding:7px 8px;font-size:13px}
+  .finance-form input[type=file]::file-selector-button{border:0;border-radius:4px;padding:4px 7px;margin-inline-end:6px;font:inherit;cursor:pointer}
+  .finance-form textarea{min-height:48px;resize:vertical}
+  #fin-status:empty{display:none}
+  #finance-view .dash-panel{margin-top:16px}
+  .fin-downloads{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .fin-download{position:relative;display:inline-grid;place-items:end center;width:34px;height:36px;padding:0 0 5px;background:#fff;border:1px solid currentColor;border-radius:5px;font-size:10px;font-weight:750;cursor:pointer}
+  .fin-download::before{content:"";position:absolute;top:4px;right:5px;border-top:6px solid currentColor;border-left:6px solid transparent}
+  .fin-download:hover,.fin-download:focus-visible{background:#f1f5f9}
+  .fin-download--pdf{color:#a82338}
+  .fin-download--excel{color:#126847}
+  @media(max-width:760px){
+    .topbar .topbar-inner{gap:8px 12px}
+    .topbar .header-right{margin-inline-start:auto}
+    .topbar .finance-nav{order:1;width:100%;gap:6px}
+    .topbar .finance-nav .btn{padding-inline:9px;font-size:12px}
+  }
+  @media(max-width:480px){.finance-form{grid-template-columns:minmax(0,1fr)}}
+</style></head>
 <body>
 <section id="login-screen"><form id="login-form"><h1 style="margin:0;color:var(--blue)">Ativação Tec</h1><p>Gestão de Leads · Acesso restrito</p><div class="field"><label for="login-user">Usuário</label><input id="login-user" autocomplete="username" required></div><div class="field"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required></div><button class="btn btn-primary" type="submit" disabled>Entrar</button><div id="login-error" role="status">Conectando...</div></form></section>
 
 <header class="topbar">
   <div class="topbar-inner">
     <div class="brand">
-      <div class="brand-text">
-        <b>Gestão de Leads</b>
-        <span>Tráfego pago &amp; captação</span>
-      </div>
+      <span class="brand-logo"><img src="assets/ativacao-tec.png" alt="Ativação Tec" width="2362" height="2362"></span>
     </div>
-    <nav class="finance-nav"><button class="btn btn-outline" id="nav-leads">Leads</button><button class="btn btn-primary" id="nav-results">Resultados de vendas</button><button class="btn btn-primary" id="nav-finance">Extrato financeiro</button></nav><div class="header-right"><button class="btn btn-outline" id="logout" type="button">Sair</button>
+    <nav class="finance-nav" aria-label="Navegação principal"><button class="btn btn-outline" id="nav-leads" type="button">Leads</button><button class="btn btn-outline" id="nav-results" type="button">Resultados de vendas</button><button class="btn btn-outline" id="nav-finance" type="button">Extrato financeiro</button><button class="btn btn-outline" id="logout" type="button">Sair</button></nav><div class="header-right">
       <div class="conn-badge">
         <span class="conn-dot" id="conn-dot"></span>
         <span id="conn-text">Conectando...</span>
@@ -442,7 +472,7 @@
  <section class="table-card dash-panel"><h2>Evolução mensal de vendas — últimos 6 meses</h2><div id="dash-line" class="dash-chart-wrap"></div></section>
 </main>
 
-<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2>Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>Arquivos PDF ou Excel (até 10 MB por arquivo)<input id="fin-files" type="file" multiple accept=".pdf,.xls,.xlsx"></label><label>Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel" hidden>Cancelar edição</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card dash-panel"><h2>Histórico financeiro</h2><div class="table-scroll"><table><thead><tr><th>Data</th><th>Título</th><th>Arquivos</th><th>Publicado por</th><th>Ações</th></tr></thead><tbody id="fin-rows"></tbody></table></div></section><dialog class="finance-dialog" id="fin-dialog"><h2 id="fin-dialog-title"></h2><p id="fin-dialog-obs"></p><form method="dialog"><button class="btn btn-outline">Fechar</button></form></dialog></main>
+<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2>Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>PDF (até 10 MB)<input id="fin-pdf" type="file" accept=".pdf"></label><label>Excel (até 10 MB)<input id="fin-excel" type="file" accept=".xls,.xlsx"></label><label class="finance-wide">Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions finance-wide"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel" hidden>Cancelar edição</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card dash-panel"><h2>Histórico financeiro</h2><div class="table-scroll"><table><thead><tr><th>Data</th><th>Título</th><th>Arquivos</th><th>Publicado por</th><th>Ações</th></tr></thead><tbody id="fin-rows"></tbody></table></div></section><dialog class="finance-dialog" id="fin-dialog"><h2 id="fin-dialog-title"></h2><p id="fin-dialog-obs"></p><form method="dialog"><button class="btn btn-outline">Fechar</button></form></dialog></main>
 <!-- Modal -->
 <div class="overlay" id="overlay">
   <div class="modal">
@@ -1072,6 +1102,8 @@ const mimeTypes={
   xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 };
 const extension=name=>name.split('.').pop().toLowerCase();
+const attachmentType=name=>extension(name)==='pdf'?'pdf':'excel';
+const attachmentInputs=['pdf','excel'].map(type=>({type,input:$('fin-'+type)}));
 const partsFor=id=>collection().doc(id).collection('attachment_parts');
 const partRef=(id,fileId,n)=>partsFor(id).doc(fileId+'_'+n);
 async function uploadFile(id,file,staged){
@@ -1121,19 +1153,108 @@ async function deleteStatement(id){
 
 const report=e=>{console.error(e);status.textContent='Não foi possível concluir a operação: '+(e.code||e.message||'erro desconhecido');};
 $('nav-finance').hidden=true;
+function selectNav(active){
+  for(const id of ['nav-leads','nav-results','nav-finance']){
+    if(id===active) $(id).setAttribute('aria-current','page');
+    else $(id).removeAttribute('aria-current');
+  }
+}
+selectNav('nav-leads');
+$('nav-results').addEventListener('click',()=>selectNav('nav-results'));
+$('nav-back').addEventListener('click',()=>selectNav('nav-leads'));
 function showLeads(){$('finance-view').style.display='none';$('nav-back').click();}
 $('nav-leads').onclick=showLeads;
-$('nav-finance').onclick=()=>{$('leads-view').style.display='none';$('results-view').style.display='none';$('finance-view').style.display='block';window.scrollTo(0,0);};
-function reset(){editing=null;form.reset();$('fin-date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);$('fin-save').textContent='Salvar lançamento';$('fin-cancel').hidden=true;}
+$('nav-finance').onclick=()=>{selectNav('nav-finance');$('leads-view').style.display='none';$('results-view').style.display='none';$('finance-view').style.display='block';window.scrollTo(0,0);};
+function reset(){editing=null;form.reset();for(const {input} of attachmentInputs)input.disabled=false;$('fin-date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);$('fin-save').textContent='Salvar lançamento';$('fin-cancel').hidden=true;}
 $('fin-cancel').onclick=reset;
 function button(label,fn){const b=document.createElement('button');b.type='button';b.className='btn btn-outline';b.textContent=label;b.onclick=fn;return b;}
-function render(){const body=$('fin-rows');body.replaceChildren();for(const r of records){const tr=body.insertRow();for(const v of [String(r.date||'').split('-').reverse().join('/'),r.title,(r.files||[]).map(f=>f.name).join(', '),r.author])tr.insertCell().textContent=v||'—';const cell=tr.insertCell();cell.className='finance-actions';const eye=button('👁',()=>{$('fin-dialog-title').textContent=r.title;$('fin-dialog-obs').textContent=r.observations||'Sem observações.';$('fin-dialog').showModal();});eye.title='Ver observações';eye.setAttribute('aria-label','Ver observações');cell.append(eye);for(const f of r.deleting?[]:r.files||[]){const b=button('↓ '+f.name,async()=>{try{const blob=await downloadFile(r.id,f);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){report(e);}});cell.append(b);}if(admin){cell.append(button('Editar',()=>{if(busy||r.deleting)return;editing=r;$('fin-title').value=r.title;$('fin-date').value=r.date;$('fin-obs').value=r.observations||'';$('fin-files').value='';$('fin-save').textContent='Salvar alterações';$('fin-cancel').hidden=false;form.scrollIntoView();}),button(r.deleting?'Concluir exclusão':'Excluir',async()=>{if(busy||!confirm('Excluir este lançamento e seus arquivos?'))return;busy=true;try{await deleteStatement(r.id);status.textContent='Lançamento excluído.';reset();}catch(e){report(e);}finally{busy=false;}}));}}if(!records.length){const c=body.insertRow().insertCell();c.colSpan=5;c.textContent='Nenhum lançamento financeiro.';}}
+function render(){
+  const body=$('fin-rows');
+  body.replaceChildren();
+  for(const record of records){
+    const row=body.insertRow();
+    for(const value of [String(record.date||'').split('-').reverse().join('/'),record.title]){
+      row.insertCell().textContent=value||'—';
+    }
+    const filesCell=row.insertCell();
+    const downloads=document.createElement('div');
+    downloads.className='fin-downloads';
+    const files=record.deleting?[]:record.files||[];
+    for(const file of files){
+      const type=attachmentType(file.name);
+      const download=button(type==='pdf'?'PDF':'XLS',async()=>{
+        download.disabled=true;
+        try{
+          const blob=await downloadFile(record.id,file);
+          const url=URL.createObjectURL(blob);
+          const link=document.createElement('a');
+          link.href=url;
+          link.download=file.name;
+          link.click();
+          setTimeout(()=>URL.revokeObjectURL(url),1000);
+        }catch(error){report(error);}
+        finally{download.disabled=false;}
+      });
+      download.className='fin-download fin-download--'+type;
+      download.title='Baixar '+file.name;
+      download.setAttribute('aria-label',download.title);
+      downloads.append(download);
+    }
+    filesCell.append(files.length?downloads:'—');
+    row.insertCell().textContent=record.author||'—';
+    const actions=row.insertCell();
+    const controls=document.createElement('div');
+    controls.className='finance-actions';
+    const eye=button('👁',()=>{
+      $('fin-dialog-title').textContent=record.title;
+      $('fin-dialog-obs').textContent=record.observations||'Sem observações.';
+      $('fin-dialog').showModal();
+    });
+    eye.title='Ver observações';
+    eye.setAttribute('aria-label',eye.title);
+    controls.append(eye);
+    if(admin){
+      if(!record.deleting) controls.append(button('Editar',()=>{
+        if(busy)return;
+        reset();
+        editing=record;
+        $('fin-title').value=record.title;
+        $('fin-date').value=record.date;
+        $('fin-obs').value=record.observations||'';
+        for(const {type,input} of attachmentInputs){
+          input.disabled=files.some(file=>attachmentType(file.name)===type);
+        }
+        $('fin-save').textContent='Salvar alterações';
+        $('fin-cancel').hidden=false;
+        form.scrollIntoView();
+      }));
+      controls.append(button(record.deleting?'Concluir exclusão':'Excluir',async()=>{
+        if(busy||!confirm('Excluir este lançamento e seus arquivos?'))return;
+        busy=true;
+        try{
+          await deleteStatement(record.id);
+          status.textContent='Lançamento excluído.';
+          reset();
+        }catch(error){report(error);}
+        finally{busy=false;}
+      }));
+    }
+    actions.append(controls);
+  }
+  if(!records.length){
+    const empty=body.insertRow().insertCell();
+    empty.colSpan=5;
+    empty.textContent='Nenhum lançamento financeiro.';
+  }
+}
 form.onsubmit=async e=>{
   e.preventDefault();
   if(!admin||busy)return;
-  const files=[...$('fin-files').files];
+  const selections=attachmentInputs.flatMap(({type,input})=>input.files.length?[{type,file:input.files[0]}]:[]);
+  const files=selections.map(({file})=>file);
   if(!editing&&!files.length){status.textContent='Selecione pelo menos um arquivo.';return;}
-  if(files.some(f=>!/\.(pdf|xls|xlsx)$/i.test(f.name)||f.size>fileLimit||!f.size)){
+  if(selections.some(({type,file})=>!/\.(pdf|xls|xlsx)$/i.test(file.name)
+    ||attachmentType(file.name)!==type||file.size>fileLimit||!file.size)){
     status.textContent='Use PDF, XLS ou XLSX de até 10 MB.';
     return;
   }
@@ -1154,7 +1275,11 @@ form.onsubmit=async e=>{
       const snap=await tx.get(ref);
       if(currentEdit){
         if(!snap.exists||snap.data().deleting) throw new Error('O lançamento foi excluído.');
-        tx.update(ref,{...data,files:[...(snap.data().files||[]),...uploaded]});
+        const savedFiles=snap.data().files||[];
+        if(uploaded.some(file=>savedFiles.some(saved=>attachmentType(saved.name)===attachmentType(file.name)))){
+          throw new Error('Este lançamento já tem um arquivo desse tipo.');
+        }
+        tx.update(ref,{...data,files:[...savedFiles,...uploaded]});
       }else{
         tx.set(ref,{...data,files:uploaded,author,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
       }
