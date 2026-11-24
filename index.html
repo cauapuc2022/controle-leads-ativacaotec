@@ -990,7 +990,7 @@ document.getElementById('file-import').addEventListener('change', (e)=>{
 
 /* ================= INIT ================= */
 let unsubscribeLeads = null;
-const allowedUsers = ['caua.ativacao','marcelo.ativacao','edson.ativacao'];
+const allowedUsers = ['caua','marcelo','edson'];
 const loginForm = document.getElementById('login-form');
 const loginError = document.getElementById('login-error');
 const loginButton = loginForm.querySelector('button');
@@ -999,7 +999,7 @@ try {
  firebase.initializeApp(FIREBASE_CONFIG);
  const auth = firebase.auth();
  auth.onAuthStateChanged(user=>{
-   const permitted = user && allowedUsers.some(name=>user.email === name+'@controle-leads-ativacaotec.firebaseapp.com');
+   const permitted = user && allowedUsers.some(name=>user.email === name+'@ativacao.com');
    if(unsubscribeLeads){unsubscribeLeads();unsubscribeLeads=null;}
    leads=[]; render();
    document.body.classList.toggle('authenticated',!!permitted);
@@ -1008,11 +1008,11 @@ try {
  },()=>{loginError.textContent='Não foi possível iniciar a autenticação.';});
  loginForm.addEventListener('submit',async event=>{
    event.preventDefault();loginButton.disabled=true;loginError.textContent='';
-   const name=normalizeUser(document.getElementById('login-user').value);
+   const name=normalizeUser(document.getElementById('login-user').value).replace(/(?:\.ativacao|@ativacao\.com)$/,'');
    const password=document.getElementById('login-password');
    try{
      if(!allowedUsers.includes(name)) throw new Error('invalid');
-     await auth.signInWithEmailAndPassword(name+'@controle-leads-ativacaotec.firebaseapp.com',password.value);
+     await auth.signInWithEmailAndPassword(name+'@ativacao.com',password.value);
    }catch(e){loginError.textContent='Usuário ou senha inválidos, ou acesso ainda não configurado.';}
    finally{password.value='';loginButton.disabled=false;}
  });
