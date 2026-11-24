@@ -316,7 +316,8 @@
   .topbar .brand{flex:none}
   .brand-logo{display:block;position:relative;overflow:hidden;width:174px;aspect-ratio:4.2}
   .topbar .brand-logo img{position:absolute;top:0;left:-7.3%;width:116%;height:auto;max-width:none;transform:translateY(-26.5%);mix-blend-mode:multiply}
-  .topbar .finance-nav{margin-inline-start:auto;justify-content:flex-end;width:auto}
+  .topbar .session-user{margin-inline-start:auto;color:var(--ink-soft);font-size:12px;overflow-wrap:anywhere}
+  .topbar .finance-nav{justify-content:flex-end;width:auto}
   .topbar .finance-nav .btn{height:36px;padding:0 13px;font-size:13px;font-weight:600;white-space:nowrap}
   .topbar .finance-nav .btn[aria-current="page"]{background:var(--blue);border-color:var(--blue);color:white}
   .topbar .header-right{width:auto;flex:none}
@@ -330,6 +331,7 @@
   .finance-form textarea{min-height:48px;resize:vertical}
   #fin-status:empty{display:none}
   #finance-view .dash-panel{margin-top:16px}
+  .fin-edited-by{display:block;color:var(--ink-soft);font-size:12px;margin-top:3px}
   .fin-downloads{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
   .fin-download{position:relative;display:inline-grid;place-items:end center;width:34px;height:36px;padding:0 0 5px;background:#fff;border:1px solid currentColor;border-radius:5px;font-size:10px;font-weight:750;cursor:pointer}
   .fin-download::before{content:"";position:absolute;top:4px;right:5px;border-top:6px solid currentColor;border-left:6px solid transparent}
@@ -338,6 +340,7 @@
   .fin-download--excel{color:#126847}
   @media(max-width:760px){
     .topbar .topbar-inner{gap:8px 12px}
+    .topbar .session-user{margin-inline-start:auto}
     .topbar .header-right{margin-inline-start:auto}
     .topbar .finance-nav{order:1;width:100%;gap:6px}
     .topbar .finance-nav .btn{padding-inline:9px;font-size:12px}
@@ -352,6 +355,7 @@
     <div class="brand">
       <span class="brand-logo"><img src="assets/ativacao-tec.png" alt="Ativação Tec" width="2362" height="2362"></span>
     </div>
+    <span id="session-user" class="session-user"></span>
     <nav class="finance-nav" aria-label="Navegação principal"><button class="btn btn-outline" id="nav-leads" type="button">Leads</button><button class="btn btn-outline" id="nav-results" type="button">Resultados de vendas</button><button class="btn btn-outline" id="nav-finance" type="button">Extrato financeiro</button><button class="btn btn-outline" id="logout" type="button">Sair</button></nav><div class="header-right">
       <div class="conn-badge">
         <span class="conn-dot" id="conn-dot"></span>
@@ -1033,13 +1037,14 @@ try {
    const permitted = user && allowedUsers.some(name=>user.email === name+'@ativacao.com');
    if(unsubscribeLeads){unsubscribeLeads();unsubscribeLeads=null;}
    leads=[]; render();
+   document.getElementById('session-user').textContent=permitted?user.email:'';
    document.body.classList.toggle('authenticated',!!permitted);
    if(permitted){loginError.textContent='';initApp();}
    else {if(user) auth.signOut(); loginButton.disabled=false;loginError.textContent='';}
  },()=>{loginError.textContent='Não foi possível iniciar a autenticação.';});
  loginForm.addEventListener('submit',async event=>{
    event.preventDefault();loginButton.disabled=true;loginError.textContent='';
-   const name=normalizeUser(document.getElementById('login-user').value).replace(/(?:\.ativacao|@ativacao\.com)$/,'');
+   const name=normalizeUser(document.getElementById('login-user').value).replace(/(?:\.ativacao|@ativacao(?:\.com)?)$/,'');
    const password=document.getElementById('login-password');
    try{
      if(!allowedUsers.includes(name)) throw new Error('invalid');
@@ -1196,12 +1201,19 @@ function render(){
         finally{download.disabled=false;}
       });
       download.className='fin-download fin-download--'+type;
-      download.title='Baixar '+file.name;
+      download.title='Baixar '+file.name+(file.uploadedBy?' · Enviado por '+file.uploadedBy:'');
       download.setAttribute('aria-label',download.title);
       downloads.append(download);
     }
     filesCell.append(files.length?downloads:'—');
-    row.insertCell().textContent=record.author||'—';
+    const publisher=row.insertCell();
+    publisher.textContent=record.author||'—';
+    if(record.editedBy && record.editedBy!==record.author){
+      const editor=document.createElement('small');
+      editor.className='fin-edited-by';
+      editor.textContent='Editado por '+record.editedBy;
+      publisher.append(editor);
+    }
     const actions=row.insertCell();
     const controls=document.createElement('div');
     controls.className='finance-actions';
@@ -1260,26 +1272,31 @@ form.onsubmit=async e=>{
   }
   const title=$('fin-title').value.trim();
   if(!title)return;
+  const user=firebase.auth().currentUser;
+  if(!user||!financialUsers.includes(user.email))return;
   busy=true;
   $('fin-save').disabled=true;
   const staged=[];
   const uploaded=[];
   const currentEdit=editing;
   const ref=currentEdit?collection().doc(currentEdit.id):collection().doc();
-  const author=firebase.auth().currentUser.email;
+  const author=user.email;
   const data={title,date:$('fin-date').value,observations:$('fin-obs').value,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
   try {
-    for(const file of files) uploaded.push(await uploadFile(ref.id,file,staged));
+    for(const file of files){
+      uploaded.push({...await uploadFile(ref.id,file,staged),uploadedBy:author});
+    }
     await firebase.firestore().runTransaction(async tx=>{
       const snap=await tx.get(ref);
+      if(firebase.auth().currentUser?.uid!==user.uid) throw new Error('A sessão mudou. Entre novamente para salvar.');
       if(currentEdit){
         if(!snap.exists||snap.data().deleting) throw new Error('O lançamento foi excluído.');
         const savedFiles=snap.data().files||[];
         if(uploaded.some(file=>savedFiles.some(saved=>attachmentType(saved.name)===attachmentType(file.name)))){
           throw new Error('Este lançamento já tem um arquivo desse tipo.');
         }
-        tx.update(ref,{...data,files:[...savedFiles,...uploaded]});
+        tx.update(ref,{...data,editedBy:author,files:[...savedFiles,...uploaded]});
       }else{
         tx.set(ref,{...data,files:uploaded,author,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
       }
