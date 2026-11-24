@@ -310,7 +310,7 @@
 .dash-point .dash-tooltip rect{filter:drop-shadow(0 5px 10px rgba(18,90,156,.15))}.dash-chart-note{font-size:12px;color:var(--ink-soft);line-height:1.5;margin-top:12px}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-<style>body:not(.authenticated)>header,body:not(.authenticated)>main,body:not(.authenticated)>.overlay{display:none!important}#login-screen{min-height:100vh;display:grid;place-items:center;padding:24px}body.authenticated #login-screen{display:none}#login-form{width:min(100%,400px);background:white;padding:32px;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-md);display:grid;gap:16px}#login-error{color:var(--danger);font-size:13px}</style></head>
+<style>body:not(.authenticated)>header,body:not(.authenticated)>main,body:not(.authenticated)>.overlay{display:none!important}#login-screen{min-height:100vh;display:grid;place-items:center;padding:24px}body.authenticated #login-screen{display:none}#login-form{width:min(100%,400px);background:white;padding:32px;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-md);display:grid;gap:16px}#login-error{color:var(--danger);font-size:13px}</style><style>.finance-nav{display:flex;gap:8px;flex-wrap:wrap}.finance-form{display:grid;gap:14px;padding:20px}.finance-form label{display:grid;gap:6px;font-weight:600}.finance-form input,.finance-form textarea{padding:10px;border:1px solid var(--border);border-radius:8px;width:100%;font:inherit}.finance-form textarea{min-height:90px}.finance-actions{display:flex;gap:8px;flex-wrap:wrap}.finance-dialog{border:1px solid var(--border);border-radius:12px;padding:24px;max-width:min(600px,90vw);width:100%}.finance-dialog p{white-space:pre-wrap;overflow-wrap:anywhere}.finance-dialog::backdrop{background:#0006}@media(max-width:700px){.finance-nav{width:100%}}</style></head>
 <body>
 <section id="login-screen"><form id="login-form"><h1 style="margin:0;color:var(--blue)">Ativação Tec</h1><p>Gestão de Leads · Acesso restrito</p><div class="field"><label for="login-user">Usuário</label><input id="login-user" autocomplete="username" required></div><div class="field"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required></div><button class="btn btn-primary" type="submit" disabled>Entrar</button><div id="login-error" role="status">Conectando...</div></form></section>
 
@@ -322,7 +322,7 @@
         <span>Tráfego pago &amp; captação</span>
       </div>
     </div>
-    <div class="header-right"><button class="btn btn-outline" id="logout" type="button">Sair</button>
+    <nav class="finance-nav"><button class="btn btn-outline" id="nav-leads">Leads</button><button class="btn btn-primary" id="nav-results">Resultados de vendas</button><button class="btn btn-primary" id="nav-finance">Extrato financeiro</button></nav><div class="header-right"><button class="btn btn-outline" id="logout" type="button">Sair</button>
       <div class="conn-badge">
         <span class="conn-dot" id="conn-dot"></span>
         <span id="conn-text">Conectando...</span>
@@ -344,12 +344,12 @@
       <div class="stat-value" id="stat-total">0</div>
       <div class="stat-sub">Cadastrados até agora</div>
     </div>
-    <div class="sales-card-stack"><button type="button" class="btn btn-primary" id="nav-results">Visualizar resultados de vendas</button>
+    
     <div class="stat-card">
       <div class="stat-top"><span class="stat-diamond" style="background:var(--green);"></span><span class="stat-label">Venda Finalizada</span></div>
       <div class="stat-value" id="stat-venda">0</div>
       <div class="stat-sub">Negócios fechados</div>
-    </div></div>
+    </div>
     <div class="stat-card">
       <div class="stat-top"><span class="stat-diamond" style="background:var(--green);"></span><span class="stat-label">Demonstrou interesse</span></div>
       <div class="stat-value" id="stat-quente">0</div>
@@ -442,6 +442,7 @@
  <section class="table-card dash-panel"><h2>Evolução mensal de vendas — últimos 6 meses</h2><div id="dash-line" class="dash-chart-wrap"></div></section>
 </main>
 
+<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2>Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>Arquivos PDF ou Excel (até 10 MB por arquivo)<input id="fin-files" type="file" multiple accept=".pdf,.xls,.xlsx"></label><label>Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel" hidden>Cancelar edição</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card dash-panel"><h2>Histórico financeiro</h2><div class="table-scroll"><table><thead><tr><th>Data</th><th>Título</th><th>Arquivos</th><th>Publicado por</th><th>Ações</th></tr></thead><tbody id="fin-rows"></tbody></table></div></section><dialog class="finance-dialog" id="fin-dialog"><h2 id="fin-dialog-title"></h2><p id="fin-dialog-obs"></p><form method="dialog"><button class="btn btn-outline">Fechar</button></form></dialog></main>
 <!-- Modal -->
 <div class="overlay" id="overlay">
   <div class="modal">
@@ -1052,10 +1053,28 @@ function update(){const all=sales();refreshOptions('dash-origin',[...new Set(all
  $('dash-rows').innerHTML=priced.map(l=>'<tr><td data-label="Cliente">'+esc(l.nome||'—')+'</td><td data-label="Origem">'+esc(l.origem||'—')+'</td><td data-label="Cadastro">'+esc(fmtDate(l.data_criacao))+'</td><td data-label="Pagamento">'+esc(l.metodo_pagamento||'—')+'</td><td data-label="Valor">'+(l._amount===null?'Não informado':brl(l._amount))+'</td><td data-label="Desconto">'+(l._amount===null?'—':((600-l._amount)/600*100).toFixed(2).replace('.',',')+'%')+'</td></tr>').join('')||'<tr><td colspan="6">Nenhuma venda finalizada neste filtro.</td></tr>';
  window.__dashExport=()=>{const rows=[['Cliente','Origem','Cadastro','Tipo de pagamento','Valor','Desconto (%)']].concat(priced.map(l=>[l.nome||'',l.origem||'',fmtDate(l.data_criacao),l.metodo_pagamento||'',l._amount===null?'':l._amount,l._amount===null?'':((600-l._amount)/600*100).toFixed(2).replace('.',',')+'%']));const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='resultados_vendas_ativacao.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 }
-$('nav-results').addEventListener('click',()=>{$('leads-view').style.display='none';$('results-view').style.display='block';$('nav-results').style.display='none';update();window.scrollTo(0,0)});
-$('nav-back').addEventListener('click',()=>{$('results-view').style.display='none';$('leads-view').style.display='block';$('nav-results').style.display='inline-flex';window.scrollTo(0,0)});
+$('nav-results').addEventListener('click',()=>{$('leads-view').style.display='none';$('results-view').style.display='block';document.getElementById('finance-view').style.display='none';update();window.scrollTo(0,0)});
+$('nav-back').addEventListener('click',()=>{$('results-view').style.display='none';$('leads-view').style.display='block';window.scrollTo(0,0)});
 $('dash-origin').addEventListener('change',update);$('dash-month').addEventListener('change',update);$('dash-csv').addEventListener('click',()=>window.__dashExport());
 })();
 </script>
-</body>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id), form=$('finance-form'), status=$('fin-status');
+let unsub=null, records=[], editing=null, admin=false, busy=false;
+const collection=()=>firebase.firestore().collection('financial_statements');
+const storage=()=>firebase.storage();
+const report=e=>{console.error(e);status.textContent='Não foi possível concluir a operação: '+(e.code||e.message||'erro desconhecido');};
+function showLeads(){$('finance-view').style.display='none';$('nav-back').click();}
+$('nav-leads').onclick=showLeads;
+$('nav-finance').onclick=()=>{$('leads-view').style.display='none';$('results-view').style.display='none';$('finance-view').style.display='block';window.scrollTo(0,0);};
+function reset(){editing=null;form.reset();$('fin-date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);$('fin-save').textContent='Salvar lançamento';$('fin-cancel').hidden=true;}
+$('fin-cancel').onclick=reset;
+function button(label,fn){const b=document.createElement('button');b.type='button';b.className='btn btn-outline';b.textContent=label;b.onclick=fn;return b;}
+function render(){const body=$('fin-rows');body.replaceChildren();for(const r of records){const tr=body.insertRow();for(const v of [String(r.date||'').split('-').reverse().join('/'),r.title,(r.files||[]).map(f=>f.name).join(', '),r.author])tr.insertCell().textContent=v||'—';const cell=tr.insertCell();cell.className='finance-actions';const eye=button('👁',()=>{$('fin-dialog-title').textContent=r.title;$('fin-dialog-obs').textContent=r.observations||'Sem observações.';$('fin-dialog').showModal();});eye.title='Ver observações';eye.setAttribute('aria-label','Ver observações');cell.append(eye);for(const f of r.files||[]){const b=button('↓ '+f.name,async()=>{try{const blob=await storage().ref(f.path).getBlob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){report(e);}});cell.append(b);}if(admin){cell.append(button('Editar',()=>{if(busy)return;editing=r;$('fin-title').value=r.title;$('fin-date').value=r.date;$('fin-obs').value=r.observations||'';$('fin-files').value='';$('fin-save').textContent='Salvar alterações';$('fin-cancel').hidden=false;form.scrollIntoView();}),button('Excluir',async()=>{if(busy||!confirm('Excluir este lançamento e seus arquivos?'))return;busy=true;try{await collection().doc(r.id).delete();const results=await Promise.allSettled((r.files||[]).map(f=>storage().ref(f.path).delete()));status.textContent=results.some(x=>x.status==='rejected')?'Registro excluído; alguns arquivos precisam de limpeza no Storage.':'Lançamento excluído.';reset();}catch(e){report(e);}finally{busy=false;}}));}}if(!records.length){const c=body.insertRow().insertCell();c.colSpan=5;c.textContent='Nenhum lançamento financeiro.';}}
+form.onsubmit=async e=>{e.preventDefault();if(!admin||busy)return;const files=[...$('fin-files').files];if(!editing&&!files.length){status.textContent='Selecione pelo menos um arquivo.';return;}if(files.some(f=>!/\.(pdf|xls|xlsx)$/i.test(f.name)||f.size>10*1024*1024||!f.size)){status.textContent='Use PDF, XLS ou XLSX de até 10 MB.';return;}const title=$('fin-title').value.trim();if(!title)return;busy=true;$('fin-save').disabled=true;const uploaded=[];try{const ref=editing?collection().doc(editing.id):collection().doc();for(const f of files){const path='financial_statements/'+ref.id+'/'+crypto.randomUUID()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');const mime=/\.pdf$/i.test(f.name)?'application/pdf':/\.xlsx$/i.test(f.name)?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'application/vnd.ms-excel';await storage().ref(path).put(f,{contentType:mime});uploaded.push({name:f.name,path,size:f.size});}const data={title,date:$('fin-date').value,observations:$('fin-obs').value,files:[...(editing?.files||[]),...uploaded],updatedAt:firebase.firestore.FieldValue.serverTimestamp()};if(editing)await ref.update(data);else await ref.set({...data,author:firebase.auth().currentUser.email,createdAt:firebase.firestore.FieldValue.serverTimestamp()});reset();status.textContent='Lançamento salvo.';}catch(e){await Promise.allSettled(uploaded.map(f=>storage().ref(f.path).delete()));report(e);}finally{busy=false;$('fin-save').disabled=false;}};
+firebase.auth().onAuthStateChanged(user=>{if(unsub){unsub();unsub=null;}records=[];admin=!!user&&user.email==='marcelo@ativacao.com';$('finance-editor').hidden=!admin;reset();render();status.textContent='';if(!user||!['marcelo@ativacao.com','caua@ativacao.com','edson@ativacao.com'].includes(user.email)){showLeads();return;}unsub=collection().orderBy('date','desc').onSnapshot(s=>{records=s.docs.map(d=>({id:d.id,...d.data()}));render();},report);});
+})();
+</script></body>
 </html>
