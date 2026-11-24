@@ -344,6 +344,7 @@
   .finance-form textarea{min-height:48px;resize:vertical}
   #fin-status:empty{display:none}
   #finance-view .dash-panel{margin-top:16px}
+  .fin-observations svg{display:block;width:18px;height:18px}
   .fin-edited-by{display:block;color:var(--ink-soft);font-size:12px;margin-top:3px}
   .fin-downloads{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
   .fin-download{position:relative;display:inline-grid;place-items:end center;width:34px;height:36px;padding:0 0 5px;background:#fff;border:1px solid currentColor;border-radius:5px;font-size:10px;font-weight:750;cursor:pointer}
@@ -390,7 +391,7 @@
   #finance-view .fin-record-actions{grid-area:actions;border-top:1px solid var(--border);padding-top:9px}
   #finance-view .fin-record-actions .finance-actions{gap:6px}
   #finance-view .fin-record-actions .btn{height:34px;min-height:34px;padding:0 8px;font-size:11px}
-  #finance-view .fin-observations{font-size:0!important}
+  #finance-view .fin-observations svg{display:none}
   #finance-view .fin-observations::after{content:"Observações";font-size:11px}
   #finance-view .fin-remove{color:var(--danger)}
   #finance-view .fin-download{width:38px;min-height:38px}
@@ -1315,12 +1316,13 @@ function render(){
     actions.className='fin-record-actions';
     const controls=document.createElement('div');
     controls.className='finance-actions';
-    const eye=button('👁',()=>{
+    const eye=button('',()=>{
       $('fin-dialog-title').textContent=record.title;
       $('fin-dialog-obs').textContent=record.observations||'Sem observações.';
       $('fin-dialog').showModal();
     });
     eye.classList.add('fin-observations');
+    eye.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>';
     eye.title='Ver observações';
     eye.setAttribute('aria-label',eye.title);
     controls.append(eye);
