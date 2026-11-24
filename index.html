@@ -332,6 +332,9 @@
   .topbar .finance-nav .btn[aria-current="page"]{background:var(--blue);border-color:var(--blue);color:white}
   .topbar .header-right{width:auto;flex:none}
   #finance-editor{max-width:760px}
+  #finance-editor[hidden],#fin-new[hidden]{display:none!important}
+  #fin-new{width:38px;height:38px;padding:0;font-size:23px;line-height:1;flex:none}
+  #finance-view .page-head{align-items:center}
   .finance-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 14px;padding:14px 16px}
   .finance-form h2,.finance-form .finance-wide{grid-column:1/-1}
   .finance-form h2{font-size:16px;margin:0}
@@ -486,7 +489,7 @@
  <section class="table-card dash-panel"><h2>Evolução mensal de vendas — últimos 6 meses</h2><div id="dash-line" class="dash-chart-wrap"></div></section>
 </main>
 
-<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2>Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>PDF (até 10 MB)<input id="fin-pdf" type="file" accept=".pdf"></label><label>Excel (até 10 MB)<input id="fin-excel" type="file" accept=".xls,.xlsx"></label><label class="finance-wide">Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions finance-wide"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel" hidden>Cancelar edição</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card dash-panel"><h2>Histórico financeiro</h2><div class="table-scroll"><table><thead><tr><th>Data</th><th>Título</th><th>Arquivos</th><th>Publicado por</th><th>Ações</th></tr></thead><tbody id="fin-rows"></tbody></table></div></section><dialog class="finance-dialog" id="fin-dialog"><h2 id="fin-dialog-title"></h2><p id="fin-dialog-obs"></p><form method="dialog"><button class="btn btn-outline">Fechar</button></form></dialog></main>
+<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div><button class="btn btn-primary" type="button" id="fin-new" aria-label="Novo lançamento" title="Novo lançamento" aria-controls="finance-editor" aria-expanded="false" hidden>+</button></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2 id="fin-editor-title">Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>PDF (até 10 MB)<input id="fin-pdf" type="file" accept=".pdf"></label><label>Excel (até 10 MB)<input id="fin-excel" type="file" accept=".xls,.xlsx"></label><label class="finance-wide">Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions finance-wide"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel">Cancelar</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card dash-panel"><h2>Histórico financeiro</h2><div class="table-scroll"><table><thead><tr><th>Data</th><th>Título</th><th>Arquivos</th><th>Publicado por</th><th>Ações</th></tr></thead><tbody id="fin-rows"></tbody></table></div></section><dialog class="finance-dialog" id="fin-dialog"><h2 id="fin-dialog-title"></h2><p id="fin-dialog-obs"></p><form method="dialog"><button class="btn btn-outline">Fechar</button></form></dialog></main>
 <!-- Modal -->
 <div class="overlay" id="overlay">
   <div class="modal">
@@ -1190,8 +1193,38 @@ $('nav-back').addEventListener('click',()=>selectNav('nav-leads'));
 function showLeads(){$('finance-view').style.display='none';$('nav-back').click();}
 $('nav-leads').onclick=showLeads;
 $('nav-finance').onclick=()=>{selectNav('nav-finance');$('leads-view').style.display='none';$('results-view').style.display='none';$('finance-view').style.display='block';window.scrollTo(0,0);};
-function reset(){editing=null;form.reset();for(const {input} of attachmentInputs)input.disabled=false;$('fin-date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);$('fin-save').textContent='Salvar lançamento';$('fin-cancel').hidden=true;}
-$('fin-cancel').onclick=reset;
+const editorCard=$('finance-editor'), newButton=$('fin-new');
+function reset(){
+  editing=null;
+  form.reset();
+  for(const {input} of attachmentInputs)input.disabled=false;
+  $('fin-date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+  $('fin-save').textContent='Salvar lançamento';
+  $('fin-editor-title').textContent='Novo lançamento';
+  $('fin-cancel').textContent='Cancelar';
+}
+function setEditorOpen(open){
+  editorCard.hidden=!open;
+  newButton.setAttribute('aria-expanded',String(open));
+  const label=open?'Fechar formulário':'Novo lançamento';
+  newButton.setAttribute('aria-label',label);
+  newButton.title=label;
+  newButton.textContent=open?'−':'+';
+}
+function closeEditor(returnFocus=false){
+  setEditorOpen(false);
+  reset();
+  if(returnFocus)newButton.focus();
+}
+newButton.onclick=()=>{
+  if(!admin||busy)return;
+  if(!editorCard.hidden){closeEditor(true);return;}
+  reset();
+  status.textContent='';
+  setEditorOpen(true);
+  $('fin-title').focus();
+};
+$('fin-cancel').onclick=()=>{if(!busy)closeEditor(true);};
 function button(label,fn){const b=document.createElement('button');b.type='button';b.className='btn btn-outline';b.textContent=label;b.onclick=fn;return b;}
 function render(){
   const body=$('fin-rows');
@@ -1257,8 +1290,11 @@ function render(){
           input.disabled=files.some(file=>attachmentType(file.name)===type);
         }
         $('fin-save').textContent='Salvar alterações';
-        $('fin-cancel').hidden=false;
+        $('fin-editor-title').textContent='Editar lançamento';
+        $('fin-cancel').textContent='Cancelar edição';
+        setEditorOpen(true);
         form.scrollIntoView();
+        $('fin-title').focus({preventScroll:true});
       }));
       controls.append(button(record.deleting?'Concluir exclusão':'Excluir',async()=>{
         if(busy||!confirm('Excluir este lançamento e seus arquivos?'))return;
@@ -1266,7 +1302,7 @@ function render(){
         try{
           await deleteStatement(record.id);
           status.textContent='Lançamento excluído.';
-          reset();
+          if(editing?.id===record.id)closeEditor();
         }catch(error){report(error);}
         finally{busy=false;}
       }));
@@ -1321,7 +1357,7 @@ form.onsubmit=async e=>{
         tx.set(ref,{...data,files:uploaded,author,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
       }
     });
-    reset();
+    closeEditor(true);
     status.textContent='Lançamento salvo.';
   }catch(e){
     try { await deleteParts(staged); }
@@ -1332,7 +1368,7 @@ form.onsubmit=async e=>{
     $('fin-save').disabled=false;
   }
 };
-firebase.auth().onAuthStateChanged(user=>{if(unsub){unsub();unsub=null;}records=[];admin=!!user&&financialUsers.includes(user.email);$('nav-finance').hidden=!admin;$('finance-editor').hidden=!admin;reset();render();status.textContent='';if(!admin){showLeads();return;}unsub=collection().orderBy('date','desc').onSnapshot(s=>{records=s.docs.map(d=>({id:d.id,...d.data()}));render();},report);});
+firebase.auth().onAuthStateChanged(user=>{if(unsub){unsub();unsub=null;}records=[];admin=!!user&&financialUsers.includes(user.email);$('nav-finance').hidden=!admin;newButton.hidden=!admin;closeEditor();render();status.textContent='';if(!admin){showLeads();return;}unsub=collection().orderBy('date','desc').onSnapshot(s=>{records=s.docs.map(d=>({id:d.id,...d.data()}));render();},report);});
 })();
 </script></body>
 </html>
