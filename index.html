@@ -359,6 +359,42 @@
     .topbar .finance-nav .btn{padding-inline:9px;font-size:12px}
   }
   @media(max-width:480px){.finance-form{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:760px){
+  .topbar .topbar-inner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px}
+  .topbar .brand-logo{width:125px}
+  .topbar .session-user{margin:0;font-size:11px;text-align:right}
+  .topbar .header-right{display:none}
+  .topbar .finance-nav{grid-column:1/-1;display:flex;flex-wrap:nowrap;gap:4px;margin:0}
+  .topbar .finance-nav .btn{flex:1 1 auto;min-width:0;padding-inline:5px;font-size:clamp(9px,2.8vw,12px)}
+  #finance-view .page-head{gap:10px;margin-bottom:14px}
+  #finance-view .page-head h1{font-size:23px}
+  #finance-view .page-head p{font-size:12px}
+  #finance-view .dash-panel{padding:12px;background:transparent;border:0;box-shadow:none;margin-top:10px}
+  #finance-view .dash-panel h2{font-size:14px;margin:0 0 10px}
+  #finance-view .fin-record{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:
+      "title date" "publisher publisher" "files files" "actions actions";
+    align-items:start;gap:10px 8px;margin-bottom:10px;padding:12px;
+    border:1px solid var(--border);border-radius:12px;background:var(--white);
+  }
+  #finance-view .fin-record:last-child{border:1px solid var(--border);margin-bottom:0}
+  #finance-view .fin-record td{padding:0;border:0;min-width:0;line-height:1.35}
+  #finance-view .fin-record-title{grid-area:title;font-size:16px;font-weight:700;overflow-wrap:anywhere}
+  #finance-view .fin-record-date{grid-area:date;font-size:11px;color:var(--ink-soft);background:var(--bg);border-radius:5px;padding:4px 6px;white-space:nowrap}
+  #finance-view .fin-record-publisher{grid-area:publisher;font-size:12px;color:var(--ink-soft);overflow-wrap:anywhere}
+  #finance-view .fin-record-files{grid-area:files}
+  #finance-view .fin-record [data-caption]::before{
+    content:attr(data-caption);display:block;margin-bottom:3px;font-size:10px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft)
+  }
+  #finance-view .fin-record-actions{grid-area:actions;border-top:1px solid var(--border);padding-top:9px}
+  #finance-view .fin-record-actions .finance-actions{gap:6px}
+  #finance-view .fin-record-actions .btn{height:34px;min-height:34px;padding:0 8px;font-size:11px}
+  #finance-view .fin-observations{font-size:0!important}
+  #finance-view .fin-observations::after{content:"Observações";font-size:11px}
+  #finance-view .fin-remove{color:var(--danger)}
+  #finance-view .fin-download{width:38px;min-height:38px}
+}
 </style></head>
 <body>
 <section id="login-screen"><form id="login-form"><h1 style="margin:0;color:var(--blue)">Ativação Tec</h1><p>Gestão de Leads · Acesso restrito</p><div class="field"><label for="login-user">Usuário</label><input id="login-user" autocomplete="username" required></div><div class="field"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required></div><button class="btn btn-primary" type="submit" disabled>Entrar</button><div id="login-error" role="status">Conectando...</div></form></section>
@@ -1231,10 +1267,16 @@ function render(){
   body.replaceChildren();
   for(const record of records){
     const row=body.insertRow();
-    for(const value of [String(record.date||'').split('-').reverse().join('/'),record.title]){
-      row.insertCell().textContent=value||'—';
-    }
+    row.className='fin-record';
+    const dateCell=row.insertCell();
+    dateCell.className='fin-record-date';
+    dateCell.textContent=String(record.date||'').split('-').reverse().join('/')||'—';
+    const titleCell=row.insertCell();
+    titleCell.className='fin-record-title';
+    titleCell.textContent=record.title||'—';
     const filesCell=row.insertCell();
+    filesCell.className='fin-record-files';
+    filesCell.dataset.caption='Anexos';
     const downloads=document.createElement('div');
     downloads.className='fin-downloads';
     const files=record.deleting?[]:record.files||[];
@@ -1260,6 +1302,8 @@ function render(){
     }
     filesCell.append(files.length?downloads:'—');
     const publisher=row.insertCell();
+    publisher.className='fin-record-publisher';
+    publisher.dataset.caption='Publicado por';
     publisher.textContent=record.author||'—';
     if(record.editedBy && record.editedBy!==record.author){
       const editor=document.createElement('small');
@@ -1268,6 +1312,7 @@ function render(){
       publisher.append(editor);
     }
     const actions=row.insertCell();
+    actions.className='fin-record-actions';
     const controls=document.createElement('div');
     controls.className='finance-actions';
     const eye=button('👁',()=>{
@@ -1275,6 +1320,7 @@ function render(){
       $('fin-dialog-obs').textContent=record.observations||'Sem observações.';
       $('fin-dialog').showModal();
     });
+    eye.classList.add('fin-observations');
     eye.title='Ver observações';
     eye.setAttribute('aria-label',eye.title);
     controls.append(eye);
@@ -1296,7 +1342,7 @@ function render(){
         form.scrollIntoView();
         $('fin-title').focus({preventScroll:true});
       }));
-      controls.append(button(record.deleting?'Concluir exclusão':'Excluir',async()=>{
+      const remove=button(record.deleting?'Concluir exclusão':'Excluir',async()=>{
         if(busy||!confirm('Excluir este lançamento e seus arquivos?'))return;
         busy=true;
         try{
@@ -1305,7 +1351,9 @@ function render(){
           if(editing?.id===record.id)closeEditor();
         }catch(error){report(error);}
         finally{busy=false;}
-      }));
+      });
+      remove.classList.add('fin-remove');
+      controls.append(remove);
     }
     actions.append(controls);
   }
