@@ -1,21 +1,15 @@
-# Extrato financeiro — configuração Firebase
-O frontend usa Firestore (financial_statements) e Cloud Storage (financial_statements/{id}/{arquivo}). Marcelo é administrador; Cauã e Edson são leitores. Não publique documentos reais antes de verificar as regras no console Firebase. O GitHub não aplica essas regras automaticamente.
+# Extrato financeiro no Firebase
 
-## Firestore
-Adicionar dentro de match /databases/{database}/documents, preservando as regras existentes de leads. Remover ou restringir quaisquer regras genéricas que também concedam acesso a esta coleção (regras allow são cumulativas).
-```
-match /financial_statements/{id} {
-  allow read: if request.auth != null && request.auth.token.email in ['marcelo@ativacao.com','caua@ativacao.com','edson@ativacao.com'];
-  allow create, update, delete: if request.auth != null && request.auth.token.email == 'marcelo@ativacao.com';
-}
-```
-## Storage
-Ativar o bucket existente, se necessário. Adicionar dentro de match /b/{bucket}/o, preservando regras de outros caminhos e restringindo regras genéricas sobrepostas.
-```
-match /financial_statements/{id}/{file} {
-  allow read: if request.auth != null && request.auth.token.email in ['marcelo@ativacao.com','caua@ativacao.com','edson@ativacao.com'];
-  allow create, update: if request.auth != null && request.auth.token.email == 'marcelo@ativacao.com' && request.resource.size <= 10 * 1024 * 1024 && request.resource.contentType in ['application/pdf','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-  allow delete: if request.auth != null && request.auth.token.email == 'marcelo@ativacao.com';
-}
-```
-Configurar CORS do bucket para permitir GET da origem real do site (getBlob utiliza requisição autenticada). Verificar plano de faturamento exigido pelo Storage. Testar upload, download, edição, exclusão e acesso negado a leitores para operações de escrita. Não foi realizado deploy de regras nem teste autenticado em produção.
+O extrato usa o Firestore para o histórico e os anexos no projeto `controle-leads-ativacaotec`. O upload de novos arquivos funciona no plano Spark, dentro das cotas do banco já utilizado pelos leads. Cada PDF, XLS ou XLSX de até 10 MB é dividido em documentos binários de até 768 KiB. O histórico carrega os metadados, e os bytes são lidos apenas ao baixar um arquivo.
+
+Cauã, Marcelo e Edson podem visualizar, publicar, editar, baixar e excluir lançamentos. A autenticação e a autorização são verificadas pelo Firebase. As permissões da coleção de leads seguem a regra já publicada no projeto.
+
+## Publicação
+
+Publique `firestore.rules` no banco padrão usando o Console do Firebase ou `firebase deploy --only firestore:rules --project controle-leads-ativacaotec`. Confirme antes se a regra de leads no console ainda corresponde à regra versionada. A publicação do HTML segue o fluxo de hospedagem do repositório. Novos anexos dispensam Cloud Storage e CORS.
+
+Registros antigos com referências do Cloud Storage continuam usando o caminho antigo. O download e a limpeza desses arquivos dependem de o bucket original continuar acessível.
+
+## Verificação
+
+Com um arquivo de teste sem dados reais, valide upload, download, edição e exclusão nas contas autorizadas. Confira se as três contas veem o mesmo histórico e se uma conta fora da lista recebe acesso negado a lançamentos e anexos. Confira também a tela de leads. O armazenamento e o tráfego dos anexos compartilham a cota do Firestore com o restante do sistema.

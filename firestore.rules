@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function canManageFinancialStatements() {
+      return request.auth != null && request.auth.token.email in [
+        'caua@ativacao.com',
+        'marcelo@ativacao.com',
+        'edson@ativacao.com'
+      ];
+    }
+
+    match /leads/{doc} {
+      allow read, write: if true;
+    }
+
+    match /financial_statements/{id} {
+      allow read, create, update, delete: if canManageFinancialStatements();
+
+      match /attachment_parts/{part} {
+        allow get: if canManageFinancialStatements()
+          && exists(/databases/$(database)/documents/financial_statements/$(id))
+          && get(/databases/$(database)/documents/financial_statements/$(id)).data.get('deleting', false) == false;
+        allow create: if canManageFinancialStatements()
+          && request.resource.data.keys().hasOnly(['bytes'])
+          && request.resource.data['bytes'] is bytes
+          && request.resource.data['bytes'].size() > 0
+          && request.resource.data['bytes'].size() <= 786432;
+        allow delete: if canManageFinancialStatements();
+      }
+    }
+  }
+}

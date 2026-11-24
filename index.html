@@ -1064,17 +1064,113 @@ $('dash-origin').addEventListener('change',update);$('dash-month').addEventListe
 const $=id=>document.getElementById(id), form=$('finance-form'), status=$('fin-status');
 let unsub=null, records=[], editing=null, admin=false, busy=false;
 const collection=()=>firebase.firestore().collection('financial_statements');
-const storage=()=>firebase.storage();
+const financialUsers=['caua@ativacao.com','marcelo@ativacao.com','edson@ativacao.com'];
+const partSize=768*1024, fileLimit=10*1024*1024;
+const mimeTypes={
+  pdf:'application/pdf',
+  xls:'application/vnd.ms-excel',
+  xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+};
+const extension=name=>name.split('.').pop().toLowerCase();
+const partsFor=id=>collection().doc(id).collection('attachment_parts');
+const partRef=(id,fileId,n)=>partsFor(id).doc(fileId+'_'+n);
+async function uploadFile(id,file,staged){
+  const fileId=crypto.randomUUID();
+  const count=Math.ceil(file.size/partSize);
+  for(let n=0;n<count;n++){
+    const ref=partRef(id,fileId,n);
+    const bytes=new Uint8Array(await file.slice(n*partSize,(n+1)*partSize).arrayBuffer());
+    staged.push(ref);
+    await ref.set({bytes:firebase.firestore.Blob.fromUint8Array(bytes)});
+  }
+  return {fileId,count,name:file.name,size:file.size,mime:mimeTypes[extension(file.name)]};
+}
+async function downloadFile(id,file){
+  if(file.path) return firebase.storage().ref(file.path).getBlob();
+  const refs=Array.from({length:file.count},(_,n)=>partRef(id,file.fileId,n));
+  const docs=await Promise.all(refs.map(ref=>ref.get({source:'server'})));
+  if(docs.some(doc=>!doc.exists)) throw new Error('Arquivo incompleto.');
+  const blob=new Blob(docs.map(doc=>doc.data().bytes.toUint8Array()),{type:file.mime});
+  if(blob.size!==file.size) throw new Error('Arquivo incompleto.');
+  return blob;
+}
+async function deleteParts(refs){
+  for(let i=0;i<refs.length;i+=100){
+    const batch=firebase.firestore().batch();
+    for(const ref of refs.slice(i,i+100)) batch.delete(ref);
+    await batch.commit();
+  }
+}
+async function deleteStatement(id){
+  const db=firebase.firestore(), ref=collection().doc(id);
+  const files=await db.runTransaction(async tx=>{
+    const snap=await tx.get(ref);
+    if(!snap.exists) return null;
+    tx.update(ref,{deleting:true});
+    return snap.data().files||[];
+  });
+  if(!files) return;
+  await deleteParts(files.filter(file=>file.fileId).flatMap(file=>
+    Array.from({length:file.count},(_,n)=>partRef(id,file.fileId,n))));
+  await Promise.all(files.filter(file=>file.path).map(async file=>{
+    try { await firebase.storage().ref(file.path).delete(); }
+    catch(error){ if(error.code!=='storage/object-not-found') throw error; }
+  }));
+  await ref.delete();
+}
+
 const report=e=>{console.error(e);status.textContent='Não foi possível concluir a operação: '+(e.code||e.message||'erro desconhecido');};
+$('nav-finance').hidden=true;
 function showLeads(){$('finance-view').style.display='none';$('nav-back').click();}
 $('nav-leads').onclick=showLeads;
 $('nav-finance').onclick=()=>{$('leads-view').style.display='none';$('results-view').style.display='none';$('finance-view').style.display='block';window.scrollTo(0,0);};
 function reset(){editing=null;form.reset();$('fin-date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);$('fin-save').textContent='Salvar lançamento';$('fin-cancel').hidden=true;}
 $('fin-cancel').onclick=reset;
 function button(label,fn){const b=document.createElement('button');b.type='button';b.className='btn btn-outline';b.textContent=label;b.onclick=fn;return b;}
-function render(){const body=$('fin-rows');body.replaceChildren();for(const r of records){const tr=body.insertRow();for(const v of [String(r.date||'').split('-').reverse().join('/'),r.title,(r.files||[]).map(f=>f.name).join(', '),r.author])tr.insertCell().textContent=v||'—';const cell=tr.insertCell();cell.className='finance-actions';const eye=button('👁',()=>{$('fin-dialog-title').textContent=r.title;$('fin-dialog-obs').textContent=r.observations||'Sem observações.';$('fin-dialog').showModal();});eye.title='Ver observações';eye.setAttribute('aria-label','Ver observações');cell.append(eye);for(const f of r.files||[]){const b=button('↓ '+f.name,async()=>{try{const blob=await storage().ref(f.path).getBlob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){report(e);}});cell.append(b);}if(admin){cell.append(button('Editar',()=>{if(busy)return;editing=r;$('fin-title').value=r.title;$('fin-date').value=r.date;$('fin-obs').value=r.observations||'';$('fin-files').value='';$('fin-save').textContent='Salvar alterações';$('fin-cancel').hidden=false;form.scrollIntoView();}),button('Excluir',async()=>{if(busy||!confirm('Excluir este lançamento e seus arquivos?'))return;busy=true;try{await collection().doc(r.id).delete();const results=await Promise.allSettled((r.files||[]).map(f=>storage().ref(f.path).delete()));status.textContent=results.some(x=>x.status==='rejected')?'Registro excluído; alguns arquivos precisam de limpeza no Storage.':'Lançamento excluído.';reset();}catch(e){report(e);}finally{busy=false;}}));}}if(!records.length){const c=body.insertRow().insertCell();c.colSpan=5;c.textContent='Nenhum lançamento financeiro.';}}
-form.onsubmit=async e=>{e.preventDefault();if(!admin||busy)return;const files=[...$('fin-files').files];if(!editing&&!files.length){status.textContent='Selecione pelo menos um arquivo.';return;}if(files.some(f=>!/\.(pdf|xls|xlsx)$/i.test(f.name)||f.size>10*1024*1024||!f.size)){status.textContent='Use PDF, XLS ou XLSX de até 10 MB.';return;}const title=$('fin-title').value.trim();if(!title)return;busy=true;$('fin-save').disabled=true;const uploaded=[];try{const ref=editing?collection().doc(editing.id):collection().doc();for(const f of files){const path='financial_statements/'+ref.id+'/'+crypto.randomUUID()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');const mime=/\.pdf$/i.test(f.name)?'application/pdf':/\.xlsx$/i.test(f.name)?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'application/vnd.ms-excel';await storage().ref(path).put(f,{contentType:mime});uploaded.push({name:f.name,path,size:f.size});}const data={title,date:$('fin-date').value,observations:$('fin-obs').value,files:[...(editing?.files||[]),...uploaded],updatedAt:firebase.firestore.FieldValue.serverTimestamp()};if(editing)await ref.update(data);else await ref.set({...data,author:firebase.auth().currentUser.email,createdAt:firebase.firestore.FieldValue.serverTimestamp()});reset();status.textContent='Lançamento salvo.';}catch(e){await Promise.allSettled(uploaded.map(f=>storage().ref(f.path).delete()));report(e);}finally{busy=false;$('fin-save').disabled=false;}};
-firebase.auth().onAuthStateChanged(user=>{if(unsub){unsub();unsub=null;}records=[];admin=!!user&&user.email==='marcelo@ativacao.com';$('finance-editor').hidden=!admin;reset();render();status.textContent='';if(!user||!['marcelo@ativacao.com','caua@ativacao.com','edson@ativacao.com'].includes(user.email)){showLeads();return;}unsub=collection().orderBy('date','desc').onSnapshot(s=>{records=s.docs.map(d=>({id:d.id,...d.data()}));render();},report);});
+function render(){const body=$('fin-rows');body.replaceChildren();for(const r of records){const tr=body.insertRow();for(const v of [String(r.date||'').split('-').reverse().join('/'),r.title,(r.files||[]).map(f=>f.name).join(', '),r.author])tr.insertCell().textContent=v||'—';const cell=tr.insertCell();cell.className='finance-actions';const eye=button('👁',()=>{$('fin-dialog-title').textContent=r.title;$('fin-dialog-obs').textContent=r.observations||'Sem observações.';$('fin-dialog').showModal();});eye.title='Ver observações';eye.setAttribute('aria-label','Ver observações');cell.append(eye);for(const f of r.deleting?[]:r.files||[]){const b=button('↓ '+f.name,async()=>{try{const blob=await downloadFile(r.id,f);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){report(e);}});cell.append(b);}if(admin){cell.append(button('Editar',()=>{if(busy||r.deleting)return;editing=r;$('fin-title').value=r.title;$('fin-date').value=r.date;$('fin-obs').value=r.observations||'';$('fin-files').value='';$('fin-save').textContent='Salvar alterações';$('fin-cancel').hidden=false;form.scrollIntoView();}),button(r.deleting?'Concluir exclusão':'Excluir',async()=>{if(busy||!confirm('Excluir este lançamento e seus arquivos?'))return;busy=true;try{await deleteStatement(r.id);status.textContent='Lançamento excluído.';reset();}catch(e){report(e);}finally{busy=false;}}));}}if(!records.length){const c=body.insertRow().insertCell();c.colSpan=5;c.textContent='Nenhum lançamento financeiro.';}}
+form.onsubmit=async e=>{
+  e.preventDefault();
+  if(!admin||busy)return;
+  const files=[...$('fin-files').files];
+  if(!editing&&!files.length){status.textContent='Selecione pelo menos um arquivo.';return;}
+  if(files.some(f=>!/\.(pdf|xls|xlsx)$/i.test(f.name)||f.size>fileLimit||!f.size)){
+    status.textContent='Use PDF, XLS ou XLSX de até 10 MB.';
+    return;
+  }
+  const title=$('fin-title').value.trim();
+  if(!title)return;
+  busy=true;
+  $('fin-save').disabled=true;
+  const staged=[];
+  const uploaded=[];
+  const currentEdit=editing;
+  const ref=currentEdit?collection().doc(currentEdit.id):collection().doc();
+  const author=firebase.auth().currentUser.email;
+  const data={title,date:$('fin-date').value,observations:$('fin-obs').value,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+  try {
+    for(const file of files) uploaded.push(await uploadFile(ref.id,file,staged));
+    await firebase.firestore().runTransaction(async tx=>{
+      const snap=await tx.get(ref);
+      if(currentEdit){
+        if(!snap.exists||snap.data().deleting) throw new Error('O lançamento foi excluído.');
+        tx.update(ref,{...data,files:[...(snap.data().files||[]),...uploaded]});
+      }else{
+        tx.set(ref,{...data,files:uploaded,author,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      }
+    });
+    reset();
+    status.textContent='Lançamento salvo.';
+  }catch(e){
+    try { await deleteParts(staged); }
+    catch(cleanupError){console.error('Falha ao limpar anexos pendentes',cleanupError);}
+    report(e);
+  }finally{
+    busy=false;
+    $('fin-save').disabled=false;
+  }
+};
+firebase.auth().onAuthStateChanged(user=>{if(unsub){unsub();unsub=null;}records=[];admin=!!user&&financialUsers.includes(user.email);$('nav-finance').hidden=!admin;$('finance-editor').hidden=!admin;reset();render();status.textContent='';if(!admin){showLeads();return;}unsub=collection().orderBy('date','desc').onSnapshot(s=>{records=s.docs.map(d=>({id:d.id,...d.data()}));render();},report);});
 })();
 </script></body>
 </html>
