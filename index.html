@@ -360,7 +360,25 @@
   .fin-summary h2{font-size:16px;margin:0 0 5px}
   #fin-summary-status{margin:0;color:var(--ink-soft);font-size:12px}
   #fin-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;margin:12px 0 0}
-  #fin-metrics[hidden]{display:none}
+  #fin-metrics[hidden],#fin-charts[hidden]{display:none}
+  .fin-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+  .fin-chart{border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0}
+  .fin-chart h3{font-size:14px;margin:0 0 8px}
+  .fin-chart p{font-size:12px;color:var(--ink-soft);margin:0}
+  .fin-chart-legend{display:flex;gap:12px;font-size:11px;color:var(--ink-soft);margin-bottom:7px}
+  .fin-chart-legend span::before{content:"";display:inline-block;width:8px;height:8px;margin-right:4px;border-radius:50%;background:var(--bar)}
+  .fin-income{--bar:#167456}.fin-outflow{--bar:#b44748}.fin-fee{--bar:#7951ad}.fin-spend{--bar:#356da8}
+  .fin-chart-row{margin-top:8px}
+  .fin-chart-label{display:flex;justify-content:space-between;gap:6px;font-size:12px;overflow-wrap:anywhere}
+  .fin-chart-label strong{white-space:nowrap}
+  .fin-chart-track{display:block;height:6px;border-radius:4px;background:#edf1f5;margin-top:3px}
+  .fin-chart-track i{display:block;height:100%;border-radius:inherit;background:var(--bar)}
+  .fin-flow-month{padding:6px 0;border-top:1px solid var(--border)}
+  .fin-flow-month h4{display:flex;justify-content:space-between;gap:6px;font-size:12px;margin:0}
+  .fin-balance-svg{display:block;width:100%;height:auto;color:#175a9a}
+  .fin-balance-values{margin-top:6px;display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--ink-soft)}
+  @media(max-width:660px){.fin-charts{grid-template-columns:minmax(0,1fr)}}
+
   #fin-metrics div{background:#f4f7fb;border-radius:8px;padding:9px 10px;min-width:0}
   #fin-metrics dt{font-size:11px;color:var(--ink-soft);font-weight:600}
   #fin-metrics dd{margin:4px 0 0;font-size:17px;font-weight:700;overflow-wrap:anywhere}
@@ -561,7 +579,12 @@
  <section class="table-card dash-panel"><h2>Evolução mensal de vendas — últimos 6 meses</h2><div id="dash-line" class="dash-chart-wrap"></div></section>
 </main>
 
-<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div><button class="btn btn-primary" type="button" id="fin-new" aria-label="Novo lançamento" title="Novo lançamento" aria-controls="finance-editor" aria-expanded="false" hidden>+</button></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2 id="fin-editor-title">Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>PDF (até 10 MB)<input id="fin-pdf" type="file" accept=".pdf"></label><label>Excel (até 10 MB)<input id="fin-excel" type="file" accept=".xls,.xlsx"></label><label class="finance-wide">Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions finance-wide"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel">Cancelar</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card fin-summary" aria-labelledby="fin-summary-title"><h2 id="fin-summary-title">Resumo dos extratos Asaas</h2><p id="fin-summary-status" role="status"></p><dl id="fin-metrics" hidden><div><dt>Saldo inicial</dt><dd id="fin-metric-opening"></dd></div><div><dt>Saldo atual no extrato</dt><dd id="fin-metric-closing"></dd></div><div><dt>Entradas</dt><dd id="fin-metric-incoming"></dd></div><div><dt>Saídas</dt><dd id="fin-metric-outgoing"></dd></div><div><dt>Movimento líquido</dt><dd id="fin-metric-net"></dd></div><div><dt>Taxas (incluídas nas saídas)</dt><dd id="fin-metric-fees"></dd></div></dl></section><section class="table-card dash-panel"><h2>Histórico financeiro</h2><div class="table-scroll"><table><thead><tr><th>Data</th><th>Título</th><th>Arquivos</th><th>Publicado por</th><th>Ações</th></tr></thead><tbody id="fin-rows"></tbody></table></div></section><dialog class="finance-dialog" id="fin-dialog"><h2 id="fin-dialog-title"></h2><p id="fin-dialog-obs"></p><form method="dialog"><button class="btn btn-outline">Fechar</button></form></dialog></main>
+<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div><button class="btn btn-primary" type="button" id="fin-new" aria-label="Novo lançamento" title="Novo lançamento" aria-controls="finance-editor" aria-expanded="false" hidden>+</button></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2 id="fin-editor-title">Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>PDF (até 10 MB)<input id="fin-pdf" type="file" accept=".pdf"></label><label>Excel (até 10 MB)<input id="fin-excel" type="file" accept=".xls,.xlsx"></label><label class="finance-wide">Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions finance-wide"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel">Cancelar</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card fin-summary" aria-labelledby="fin-summary-title"><h2 id="fin-summary-title">Resumo dos extratos Asaas</h2><p id="fin-summary-status" role="status"></p><dl id="fin-metrics" hidden><div><dt>Saldo inicial</dt><dd id="fin-metric-opening"></dd></div><div><dt>Saldo atual no extrato</dt><dd id="fin-metric-closing"></dd></div><div><dt>Entradas</dt><dd id="fin-metric-incoming"></dd></div><div><dt>Saídas</dt><dd id="fin-metric-outgoing"></dd></div><div><dt>Movimento líquido</dt><dd id="fin-metric-net"></dd></div><div><dt>Taxas (incluídas nas saídas)</dt><dd id="fin-metric-fees"></dd></div></dl><div id="fin-charts" class="fin-charts" hidden>
+  <section class="fin-chart"><h3>Evolução do saldo</h3><div id="fin-balance-chart"></div></section>
+  <section class="fin-chart"><h3>Entradas e saídas por mês</h3><div class="fin-chart-legend"><span class="fin-income">Entradas</span><span class="fin-outflow">Saídas</span></div><div id="fin-flow-chart"></div></section>
+  <section class="fin-chart"><h3>Taxas pagas por tipo</h3><div id="fin-fees-chart"></div></section>
+  <section class="fin-chart"><h3>Composição das saídas</h3><div id="fin-spending-chart"></div></section>
+</div></section><section class="table-card dash-panel"><h2>Histórico financeiro</h2><div class="table-scroll"><table><thead><tr><th>Data</th><th>Título</th><th>Arquivos</th><th>Publicado por</th><th>Ações</th></tr></thead><tbody id="fin-rows"></tbody></table></div></section><dialog class="finance-dialog" id="fin-dialog"><h2 id="fin-dialog-title"></h2><p id="fin-dialog-obs"></p><form method="dialog"><button class="btn btn-outline">Fechar</button></form></dialog></main>
 <!-- Modal -->
 <div class="overlay" id="overlay">
   <div class="modal">
@@ -1253,7 +1276,9 @@ function parseAsaas(text){
     if(!match)throw new Error('Movimentação sem valor legível.');
     const day=numericDay(date[1]),value=cents(match[1]);
     if(day<start||day>end||!Number.isSafeInteger(value))throw new Error('Movimentação fora do período.');
-    rows.push({day,value,fee:/^taxa\b/i.test(line.trim().slice(date[0].length))});
+    const description=line.trim().slice(date[0].length).split(/\s+R\$/)[0];
+    const fee=/^taxas?\b/i.test(description);
+    rows.push({day,value,fee,description});
   }
   if(amounts[1]-amounts[0]!==rows.reduce((sum,row)=>sum+row.value,0)){
     throw new Error('As movimentações não conferem com os saldos do PDF.');
@@ -1285,7 +1310,10 @@ function consolidateAsaas(reports){
     until=Math.max(until,report.end);
   }
   return {...totals,start:oldest.start,end:recent.end,opening:oldest.opening,closing:recent.closing,
-    count:rowsForTotals.length,gaps,balanced:recent.closing-oldest.opening===totals.incoming-totals.outgoing};
+    count:rowsForTotals.length,rows:rowsForTotals,balancePoints:[
+      ...reports.map(report=>({day:report.end,value:report.closing,issued:report.issued})),
+      {day:oldest.start-1,value:oldest.opening,issued:oldest.issued}
+    ],gaps,balanced:recent.closing-oldest.opening===totals.incoming-totals.outgoing};
 }
 
 let pdfEngine,summaryRevision=0,summaryKey=null;
@@ -1319,11 +1347,82 @@ async function readAsaas(blob){
     return parseAsaas(lines.join('\n'));
   }finally{await task.destroy();}
 }
+
+const dashboardMonth=new Intl.DateTimeFormat('pt-BR',{month:'short',year:'numeric',timeZone:'UTC'});
+const dashboardPercent=new Intl.NumberFormat('pt-BR',{style:'percent',maximumFractionDigits:1});
+const formatCents=value=>summaryMoney.format(value/100);
+function chartBar(label,value,scale,color,share){
+  const suffix=share===undefined?'':' · '+dashboardPercent.format(share);
+  return '<div class="fin-chart-row '+color+'"><div class="fin-chart-label"><span>'+label+
+    '</span><strong>'+formatCents(value)+suffix+'</strong></div><span class="fin-chart-track" aria-hidden="true"><i style="width:'+
+    (scale?100*value/scale:0)+'%"></i></span></div>';
+}
+function expenseType(row){
+  const text=row.description.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(row.fee){
+    if(/\bantecipacao\b/.test(text))return 'Taxa de antecipação';
+    if(/\bcartao\b/.test(text))return 'Taxa de cartão';
+    if(/\bpix\b/.test(text))return 'Taxa do Pix';
+    if(/\bboleto\b/.test(text))return 'Taxa de boleto';
+    if(/\btransferencia\b/.test(text))return 'Taxa de transferência';
+    return 'Outras taxas';
+  }
+  if(/\bestorno\b/.test(text))return 'Estornos';
+  if(/\bpix\b/.test(text))return 'Pagamentos e transferências via Pix';
+  if(/\bboleto\b/.test(text))return 'Pagamentos via boleto';
+  if(/\btransferencia\b/.test(text))return 'Transferências';
+  return 'Outras saídas';
+}
+function renderBalance(points){
+  const unique=new Map();
+  for(const point of [...points].sort((a,b)=>a.issued-b.issued))unique.set(point.day,point);
+  const ordered=[...unique.values()].sort((a,b)=>a.day-b.day);
+  const min=Math.min(...ordered.map(x=>x.value)),max=Math.max(...ordered.map(x=>x.value));
+  const start=ordered[0],end=ordered.at(-1);
+  const dots=ordered.map(point=>({x:22+336*(point.day-start.day)/Math.max(1,end.day-start.day),
+    y:max===min?58:14+87*(max-point.value)/(max-min)}));
+  $('fin-balance-chart').innerHTML='<svg class="fin-balance-svg" viewBox="0 0 380 115" aria-hidden="true">'+
+    '<path d="M22 14H358M22 58H358M22 101H358" stroke="#dbe4ef" stroke-dasharray="4 4"/>'+
+    '<polyline fill="none" stroke="currentColor" stroke-width="2.5" points="'+dots.map(p=>p.x+','+p.y).join(' ')+'"/>'+
+    dots.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="3.5" fill="currentColor"/>').join('')+
+    '</svg><div class="fin-balance-values">'+ordered.map(point=>'<span>'+formatDay(point.day)+' · <strong>'+
+      formatCents(point.value)+'</strong></span>').join('')+'</div>';
+}
+function renderFinancialCharts(data){
+  const months=new Map(),fees=new Map(),spending=new Map();
+  const add=(map,key,value)=>map.set(key,(map.get(key)||0)+value);
+  for(const row of [...data.rows].sort((a,b)=>a.day-b.day)){
+    const month=new Date(row.day*86400000).toISOString().slice(0,7);
+    if(!months.has(month))months.set(month,{day:row.day,incoming:0,outgoing:0});
+    const bucket=months.get(month);
+    if(row.value>0)bucket.incoming+=row.value;
+    if(row.value<0){
+      const amount=-row.value,type=expenseType(row);
+      bucket.outgoing+=amount;
+      add(spending,row.fee?'Taxas':type,amount);
+      if(row.fee)add(fees,type,amount);
+    }
+  }
+  const scale=Math.max(0,...[...months.values()].flatMap(month=>[month.incoming,month.outgoing]));
+  $('fin-flow-chart').innerHTML=[...months.values()].map(month=>'<div class="fin-flow-month"><h4><span>'+
+    dashboardMonth.format(month.day*86400000)+'</span><span>Líquido '+formatCents(month.incoming-month.outgoing)+'</span></h4>'+
+    chartBar('Entradas',month.incoming,scale,'fin-income')+chartBar('Saídas',month.outgoing,scale,'fin-outflow')+'</div>').join('')
+    ||'<p>Sem movimentações no período.</p>';
+  const breakdown=(map,total,color,empty)=>[...map].sort((a,b)=>b[1]-a[1]).map(([label,value])=>
+    chartBar(label,value,total,color,value/total)).join('')||'<p>'+empty+'</p>';
+  $('fin-fees-chart').innerHTML=(data.fees?'<p>Total em taxas: <strong>'+formatCents(data.fees)+'</strong> · '+
+    dashboardPercent.format(data.fees/data.outgoing)+' das saídas</p>':'')+
+    breakdown(fees,data.fees,'fin-fee','Nenhuma taxa identificada nos extratos.');
+  $('fin-spending-chart').innerHTML=breakdown(spending,data.outgoing,'fin-spend','Nenhuma saída identificada no período.');
+  renderBalance(data.balancePoints);
+  $('fin-charts').hidden=false;
+}
 function resetSummary(){
   summaryRevision++;
   summaryKey=null;
   pdfCache.clear();
   $('fin-metrics').hidden=true;
+  $('fin-charts').hidden=true;
   $('fin-summary-status').textContent='';
 }
 async function refreshSummary(){
@@ -1339,6 +1438,7 @@ async function refreshSummary(){
   const revision=++summaryRevision;
   const message=$('fin-summary-status'),metrics=$('fin-metrics');
   metrics.hidden=true;
+  $('fin-charts').hidden=true;
   if(!files.length){message.textContent='Adicione um PDF de extrato Asaas para ver o resumo.';return;}
   message.textContent='Analisando os extratos Asaas…';
   for(const existing of pdfCache.keys())if(!files.some(item=>item.key===existing))pdfCache.delete(existing);
@@ -1363,6 +1463,7 @@ async function refreshSummary(){
       outgoing:data.outgoing,net:data.incoming-data.outgoing,fees:data.fees})){
       $('fin-metric-'+id).textContent=summaryMoney.format(value/100);
     }
+    renderFinancialCharts(data);
     metrics.hidden=false;
     const notes=[formatDay(data.start)+' a '+formatDay(data.end),reports.length+' de '+files.length+' PDFs analisados',data.count+' movimentações'];
     if(missing)notes.push('Resumo parcial: PDFs sem leitura ou conciliação ficaram de fora.');
