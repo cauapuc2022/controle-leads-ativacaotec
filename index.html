@@ -356,6 +356,16 @@
   .topbar .finance-nav .btn{height:36px;padding:0 13px;font-size:13px;font-weight:600;white-space:nowrap}
   .topbar .finance-nav .btn[aria-current="page"]{background:var(--blue);border-color:var(--blue);color:white}
   .topbar .header-right{width:auto;flex:none}
+  .fin-summary{margin-top:14px;padding:16px}
+  .fin-summary h2{font-size:16px;margin:0 0 5px}
+  #fin-summary-status{margin:0;color:var(--ink-soft);font-size:12px}
+  #fin-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;margin:12px 0 0}
+  #fin-metrics[hidden]{display:none}
+  #fin-metrics div{background:#f4f7fb;border-radius:8px;padding:9px 10px;min-width:0}
+  #fin-metrics dt{font-size:11px;color:var(--ink-soft);font-weight:600}
+  #fin-metrics dd{margin:4px 0 0;font-size:17px;font-weight:700;overflow-wrap:anywhere}
+  #fin-metric-closing{color:#175a9a}
+  @media(max-width:480px){#fin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#fin-metrics dd{font-size:14px}}
   #finance-editor{max-width:760px}
   #finance-editor[hidden],#fin-new[hidden]{display:none!important}
   #fin-new{width:38px;height:38px;padding:0;font-size:23px;line-height:1;flex:none}
@@ -551,7 +561,7 @@
  <section class="table-card dash-panel"><h2>Evolução mensal de vendas — últimos 6 meses</h2><div id="dash-line" class="dash-chart-wrap"></div></section>
 </main>
 
-<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div><button class="btn btn-primary" type="button" id="fin-new" aria-label="Novo lançamento" title="Novo lançamento" aria-controls="finance-editor" aria-expanded="false" hidden>+</button></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2 id="fin-editor-title">Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>PDF (até 10 MB)<input id="fin-pdf" type="file" accept=".pdf"></label><label>Excel (até 10 MB)<input id="fin-excel" type="file" accept=".xls,.xlsx"></label><label class="finance-wide">Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions finance-wide"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel">Cancelar</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card dash-panel"><h2>Histórico financeiro</h2><div class="table-scroll"><table><thead><tr><th>Data</th><th>Título</th><th>Arquivos</th><th>Publicado por</th><th>Ações</th></tr></thead><tbody id="fin-rows"></tbody></table></div></section><dialog class="finance-dialog" id="fin-dialog"><h2 id="fin-dialog-title"></h2><p id="fin-dialog-obs"></p><form method="dialog"><button class="btn btn-outline">Fechar</button></form></dialog></main>
+<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div><button class="btn btn-primary" type="button" id="fin-new" aria-label="Novo lançamento" title="Novo lançamento" aria-controls="finance-editor" aria-expanded="false" hidden>+</button></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2 id="fin-editor-title">Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>PDF (até 10 MB)<input id="fin-pdf" type="file" accept=".pdf"></label><label>Excel (até 10 MB)<input id="fin-excel" type="file" accept=".xls,.xlsx"></label><label class="finance-wide">Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions finance-wide"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel">Cancelar</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card fin-summary" aria-labelledby="fin-summary-title"><h2 id="fin-summary-title">Resumo dos extratos Asaas</h2><p id="fin-summary-status" role="status"></p><dl id="fin-metrics" hidden><div><dt>Saldo inicial</dt><dd id="fin-metric-opening"></dd></div><div><dt>Saldo atual no extrato</dt><dd id="fin-metric-closing"></dd></div><div><dt>Entradas</dt><dd id="fin-metric-incoming"></dd></div><div><dt>Saídas</dt><dd id="fin-metric-outgoing"></dd></div><div><dt>Movimento líquido</dt><dd id="fin-metric-net"></dd></div><div><dt>Taxas (incluídas nas saídas)</dt><dd id="fin-metric-fees"></dd></div></dl></section><section class="table-card dash-panel"><h2>Histórico financeiro</h2><div class="table-scroll"><table><thead><tr><th>Data</th><th>Título</th><th>Arquivos</th><th>Publicado por</th><th>Ações</th></tr></thead><tbody id="fin-rows"></tbody></table></div></section><dialog class="finance-dialog" id="fin-dialog"><h2 id="fin-dialog-title"></h2><p id="fin-dialog-obs"></p><form method="dialog"><button class="btn btn-outline">Fechar</button></form></dialog></main>
 <!-- Modal -->
 <div class="overlay" id="overlay">
   <div class="modal">
@@ -1216,6 +1226,151 @@ async function downloadFile(id,file){
   if(blob.size!==file.size) throw new Error('Arquivo incompleto.');
   return blob;
 }
+const asaasMonths='janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro'.split(' ');
+const moneyPattern='R\\$\\s*([−-]?[\\d.]+,\\d{2})';
+const dayNumber=(year,month,day)=>Date.UTC(+year,+month-1,+day)/86400000;
+const numericDay=value=>dayNumber(...value.split('/').reverse());
+const cents=value=>Number(value.replace('−','-').replace(/[.,]/g,''));
+function parseAsaas(text){
+  const header=text.replace(/\s+/g,' ');
+  const period=header.match(/Período\s+(\d{1,2}) de (\S+) de (\d{4}) a (\d{1,2}) de (\S+) de (\d{4})/i);
+  const issued=header.match(/Extrato gerado em\s+(\d{2}\/\d{2}\/\d{4})(?:\s+às\s+(\d{2}:\d{2}:\d{2}))?/i);
+  const account=header.match(/Agência:\s*(\d+)\s*Conta:\s*([\d.]+)\s*-\s*(\d+)/i);
+  const balances=header.match(new RegExp('Saldo inicial do período(.+?)Movimentações','i'));
+  if(!period||!issued||!account||!balances||!/Saldo final do período/i.test(balances[1])){
+    throw new Error('Formato de extrato não reconhecido.');
+  }
+  const amounts=[...balances[1].matchAll(new RegExp(moneyPattern,'g'))].map(match=>cents(match[1]));
+  const month=value=>asaasMonths.indexOf(value.toLowerCase())+1;
+  const [,a,b,c,d,e,f]=period;
+  const start=dayNumber(c,month(b),a), end=Math.min(dayNumber(f,month(e),d),numericDay(issued[1]));
+  if(amounts.length!==2||!month(b)||!month(e)||start>end)throw new Error('Período ou saldos inválidos.');
+  const rows=[];
+  for(const line of text.split('\n')){
+    const date=line.trim().match(/^(\d{2}\/\d{2}\/\d{4})\s+/);
+    if(!date)continue;
+    const match=line.match(new RegExp(moneyPattern+'\\s*$'));
+    if(!match)throw new Error('Movimentação sem valor legível.');
+    const day=numericDay(date[1]),value=cents(match[1]);
+    if(day<start||day>end||!Number.isSafeInteger(value))throw new Error('Movimentação fora do período.');
+    rows.push({day,value,fee:/^taxa\b/i.test(line.trim().slice(date[0].length))});
+  }
+  if(amounts[1]-amounts[0]!==rows.reduce((sum,row)=>sum+row.value,0)){
+    throw new Error('As movimentações não conferem com os saldos do PDF.');
+  }
+  return {start,end,issued:numericDay(issued[1])*86400+(issued[2]||'00:00:00').split(':').reduce((s,x)=>60*s+Number(x),0),
+    account:account.slice(1).join('/'),opening:amounts[0],closing:amounts[1],rows};
+}
+function consolidateAsaas(reports){
+  if(new Set(reports.map(report=>report.account)).size!==1)throw new Error('Os PDFs analisados pertencem a contas diferentes.');
+  const oldest=[...reports].sort((a,b)=>a.start-b.start||b.issued-a.issued)[0];
+  const recent=[...reports].sort((a,b)=>b.end-a.end||b.issued-a.issued)[0];
+  const covered=[],rowsForTotals=[];
+  for(const report of [...reports].sort((a,b)=>b.issued-a.issued||b.end-a.end)){
+    // A versão mais recente prevalece em cada dia já coberto, inclusive dias sem movimento.
+    report.rows.forEach(row=>{if(!covered.some(range=>row.day>=range.start&&row.day<=range.end)) rowsForTotals.push(row);});
+    covered.push(report);
+  }
+  const totals={incoming:0,outgoing:0,fees:0};
+  for(const row of rowsForTotals){
+    if(row.value>0)totals.incoming+=row.value;
+    else{
+      totals.outgoing-=row.value;
+      if(row.fee)totals.fees-=row.value;
+    }
+  }
+  let until=oldest.start-1, gaps=false;
+  for(const report of [...reports].sort((a,b)=>a.start-b.start)){
+    if(report.start>until+1)gaps=true;
+    until=Math.max(until,report.end);
+  }
+  return {...totals,start:oldest.start,end:recent.end,opening:oldest.opening,closing:recent.closing,
+    count:rowsForTotals.length,gaps,balanced:recent.closing-oldest.opening===totals.incoming-totals.outgoing};
+}
+
+let pdfEngine,summaryRevision=0,summaryKey=null;
+const pdfCache=new Map();
+const summaryMoney=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const summaryDate=new Intl.DateTimeFormat('pt-BR',{timeZone:'UTC'});
+const formatDay=day=>summaryDate.format(day*86400000);
+async function readAsaas(blob){
+  const base='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/legacy/build/';
+  if(!pdfEngine)pdfEngine=import(base+'pdf.min.mjs').then(pdf=>{
+    pdf.GlobalWorkerOptions.workerSrc=base+'pdf.worker.min.mjs';
+    return pdf;
+  }).catch(error=>{pdfEngine=null;throw error;});
+  const pdf=await pdfEngine;
+  const task=pdf.getDocument({data:new Uint8Array(await blob.arrayBuffer()),isEvalSupported:false});
+  try{
+    const document=await task.promise,lines=[];
+    for(let i=1;i<=document.numPages;i++){
+      const content=await (await document.getPage(i)).getTextContent();
+      const items=content.items.filter(item=>item.str?.trim())
+        .map(item=>({text:item.str,x:item.transform[4],y:item.transform[5]}))
+        .sort((a,b)=>b.y-a.y||a.x-b.x);
+      const rows=[];
+      for(const item of items){
+        let row=rows.at(-1);
+        if(!row||Math.abs(row.y-item.y)>2){row={y:item.y,parts:[]};rows.push(row);}
+        row.parts.push(item);
+      }
+      for(const row of rows)lines.push(row.parts.sort((a,b)=>a.x-b.x).map(item=>item.text).join(' '));
+    }
+    return parseAsaas(lines.join('\n'));
+  }finally{await task.destroy();}
+}
+function resetSummary(){
+  summaryRevision++;
+  summaryKey=null;
+  pdfCache.clear();
+  $('fin-metrics').hidden=true;
+  $('fin-summary-status').textContent='';
+}
+async function refreshSummary(){
+  if(!admin||$('finance-view').style.display==='none')return;
+  const files=records.filter(row=>!row.deleting).flatMap(row=>(row.files||[])
+    .filter(file=>attachmentType(file.name)==='pdf')
+    .map(file=>({id:row.id,file,time:file.uploadedAt||row.createdAt?.toMillis?.()||Date.parse(row.date)||0})))
+    .sort((a,b)=>b.time-a.time).slice(0,6)
+    .map(item=>({...item,key:item.id+'/'+(item.file.fileId||item.file.path)}));
+  const key=JSON.stringify(files.map(item=>item.key));
+  if(key===summaryKey)return;
+  summaryKey=key;
+  const revision=++summaryRevision;
+  const message=$('fin-summary-status'),metrics=$('fin-metrics');
+  metrics.hidden=true;
+  if(!files.length){message.textContent='Adicione um PDF de extrato Asaas para ver o resumo.';return;}
+  message.textContent='Analisando os extratos Asaas…';
+  for(const existing of pdfCache.keys())if(!files.some(item=>item.key===existing))pdfCache.delete(existing);
+  const results=await Promise.allSettled(files.map(({id,file,key})=>{
+    if(!pdfCache.has(key)){
+      const pending=downloadFile(id,file).then(readAsaas).catch(error=>{
+        if(pdfCache.get(key)===pending)pdfCache.delete(key);
+        throw error;
+      });
+      pdfCache.set(key,pending);
+    }
+    return pdfCache.get(key);
+  }));
+  if(revision!==summaryRevision)return;
+  const reports=results.filter(result=>result.status==='fulfilled').map(result=>result.value);
+  const missing=files.length-reports.length;
+  if(missing)summaryKey=null;
+  if(!reports.length){message.textContent='Não foi possível ler e conciliar os PDFs selecionados.';return;}
+  try{
+    const data=consolidateAsaas(reports);
+    for(const [id,value] of Object.entries({opening:data.opening,closing:data.closing,incoming:data.incoming,
+      outgoing:data.outgoing,net:data.incoming-data.outgoing,fees:data.fees})){
+      $('fin-metric-'+id).textContent=summaryMoney.format(value/100);
+    }
+    metrics.hidden=false;
+    const notes=[formatDay(data.start)+' a '+formatDay(data.end),reports.length+' de '+files.length+' PDFs analisados',data.count+' movimentações'];
+    if(missing)notes.push('Resumo parcial: PDFs sem leitura ou conciliação ficaram de fora.');
+    if(data.gaps)notes.push('Há datas sem extrato no intervalo.');
+    if(!data.balanced)notes.push('A diferença entre os saldos diverge do movimento coberto.');
+    message.textContent=notes.join(' · ');
+  }catch(error){message.textContent=error.message;}
+}
 async function deleteParts(refs){
   for(let i=0;i<refs.length;i+=100){
     const batch=firebase.firestore().batch();
@@ -1254,7 +1409,7 @@ $('nav-results').addEventListener('click',()=>selectNav('nav-results'));
 $('nav-back').addEventListener('click',()=>selectNav('nav-leads'));
 function showLeads(){$('finance-view').style.display='none';$('nav-back').click();}
 $('nav-leads').onclick=showLeads;
-$('nav-finance').onclick=()=>{selectNav('nav-finance');$('leads-view').style.display='none';$('results-view').style.display='none';$('finance-view').style.display='block';window.scrollTo(0,0);};
+$('nav-finance').onclick=()=>{selectNav('nav-finance');$('leads-view').style.display='none';$('results-view').style.display='none';$('finance-view').style.display='block';refreshSummary();window.scrollTo(0,0);};
 const editorCard=$('finance-editor'), newButton=$('fin-new');
 function reset(){
   editing=null;
@@ -1416,7 +1571,7 @@ form.onsubmit=async e=>{
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
   try {
     for(const file of files){
-      uploaded.push({...await uploadFile(ref.id,file,staged),uploadedBy:author});
+      uploaded.push({...await uploadFile(ref.id,file,staged),uploadedBy:author,uploadedAt:Date.now()});
     }
     await firebase.firestore().runTransaction(async tx=>{
       const snap=await tx.get(ref);
@@ -1443,7 +1598,7 @@ form.onsubmit=async e=>{
     $('fin-save').disabled=false;
   }
 };
-firebase.auth().onAuthStateChanged(user=>{if(unsub){unsub();unsub=null;}records=[];admin=!!user&&financialUsers.includes(user.email);$('nav-finance').hidden=!admin;newButton.hidden=!admin;closeEditor();render();status.textContent='';if(!admin){showLeads();return;}unsub=collection().orderBy('date','desc').onSnapshot(s=>{records=s.docs.map(d=>({id:d.id,...d.data()}));render();},report);});
+firebase.auth().onAuthStateChanged(user=>{if(unsub){unsub();unsub=null;}records=[];resetSummary();admin=!!user&&financialUsers.includes(user.email);$('nav-finance').hidden=!admin;newButton.hidden=!admin;closeEditor();render();status.textContent='';if(!admin){showLeads();return;}unsub=collection().orderBy('date','desc').onSnapshot(s=>{records=s.docs.map(d=>({id:d.id,...d.data()}));render();refreshSummary();},report);});
 })();
 </script></body>
 </html>
