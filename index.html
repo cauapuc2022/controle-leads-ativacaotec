@@ -325,7 +325,8 @@
   .topbar .topbar-inner{justify-content:flex-start;gap:16px}
   .topbar .brand{flex:none}
   .brand-logo{display:block;position:relative;overflow:hidden;width:174px;aspect-ratio:4.2}
-  .topbar .brand-logo img{position:absolute;top:0;left:-7.3%;width:116%;height:auto;max-width:none;transform:translateY(-26.5%);mix-blend-mode:multiply}
+  .login-brand{width:min(100%,220px);margin:0}
+  .brand-logo img{position:absolute;top:0;left:-7.3%;width:116%;height:auto;max-width:none;transform:translateY(-26.5%);mix-blend-mode:multiply}
   .topbar .session-user{margin-inline-start:auto;color:var(--ink-soft);font-size:12px;overflow-wrap:anywhere}
   .topbar .finance-nav{justify-content:flex-end;width:auto}
   .topbar .finance-nav .btn{height:36px;padding:0 13px;font-size:13px;font-weight:600;white-space:nowrap}
@@ -398,7 +399,7 @@
 }
 </style></head>
 <body>
-<section id="login-screen"><form id="login-form"><h1 style="margin:0;color:var(--blue)">Ativação Tec</h1><p>Gestão de Leads · Acesso restrito</p><div class="field"><label for="login-user">Usuário</label><input id="login-user" autocomplete="username" required></div><div class="field"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required></div><button class="btn btn-primary" type="submit" disabled>Entrar</button><div id="login-error" role="status">Conectando...</div></form></section>
+<section id="login-screen"><form id="login-form"><h1 class="brand-logo login-brand"><img src="assets/ativacao-tec.png" alt="Ativação Tec" width="2362" height="2362"></h1><p>Controle de Leads - Financeiro</p><div class="field"><label for="login-user">Usuário</label><input id="login-user" autocomplete="username" required></div><div class="field"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required></div><button class="btn btn-primary" type="submit" disabled>Entrar</button><div id="login-error" role="status">Conectando...</div></form></section>
 
 <header class="topbar">
   <div class="topbar-inner">
