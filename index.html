@@ -581,7 +581,7 @@
  <section class="table-card dash-panel"><h2>Evolução mensal de vendas — últimos 6 meses</h2><div id="dash-line" class="dash-chart-wrap"></div></section>
 </main>
 
-<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div><button class="btn btn-primary" type="button" id="fin-new" aria-label="Novo lançamento" title="Novo lançamento" aria-controls="finance-editor" aria-expanded="false" hidden>+</button></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2 id="fin-editor-title">Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>PDF (até 10 MB)<input id="fin-pdf" type="file" accept=".pdf"></label><label>Excel (até 10 MB)<input id="fin-excel" type="file" accept=".xls,.xlsx"></label><label class="finance-wide">Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions finance-wide"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel">Cancelar</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card fin-summary" aria-labelledby="fin-summary-title"><h2 id="fin-summary-title">Resumo do último extrato Asaas enviado</h2><p id="fin-summary-status" role="status"></p><dl id="fin-metrics" hidden><div><dt>Saldo inicial</dt><dd id="fin-metric-opening"></dd></div><div><dt>Saldo atual no extrato</dt><dd id="fin-metric-closing"></dd></div><div><dt>Entradas</dt><dd id="fin-metric-incoming"></dd></div><div><dt>Saídas</dt><dd id="fin-metric-outgoing"></dd></div><div><dt>Movimento líquido</dt><dd id="fin-metric-net"></dd></div><div><dt>Taxas (incluídas nas saídas)</dt><dd id="fin-metric-fees"></dd></div></dl><p id="fin-charts-status" role="status"></p><div id="fin-charts" class="fin-charts" hidden>
+<main id="finance-view" style="display:none"><div class="page-head"><div><h1>Extrato financeiro</h1><p>Documentos e histórico financeiro</p></div><button class="btn btn-primary" type="button" id="fin-new" aria-label="Novo lançamento" title="Novo lançamento" aria-controls="finance-editor" aria-expanded="false" hidden>+</button></div><section class="table-card" id="finance-editor" hidden><form class="finance-form" id="finance-form"><h2 id="fin-editor-title">Novo lançamento</h2><label>Título<input id="fin-title" required maxlength="200"></label><label>Data<input id="fin-date" type="date" required></label><label>PDF (até 10 MB)<input id="fin-pdf" type="file" accept=".pdf"></label><label>Excel (até 10 MB)<input id="fin-excel" type="file" accept=".xls,.xlsx"></label><label class="finance-wide">Observações<textarea id="fin-obs" maxlength="10000"></textarea></label><div class="finance-actions finance-wide"><button class="btn btn-primary" type="submit" id="fin-save">Salvar lançamento</button><button class="btn btn-outline" type="button" id="fin-cancel">Cancelar</button></div></form></section><p id="fin-status" role="status"></p><section class="table-card fin-summary" aria-labelledby="fin-summary-title"><h2 id="fin-summary-title">Resumo do extrato Asaas mais recente</h2><p id="fin-summary-status" role="status"></p><dl id="fin-metrics" hidden><div><dt>Saldo inicial</dt><dd id="fin-metric-opening"></dd></div><div><dt>Saldo atual no extrato</dt><dd id="fin-metric-closing"></dd></div><div><dt>Entradas</dt><dd id="fin-metric-incoming"></dd></div><div><dt>Saídas</dt><dd id="fin-metric-outgoing"></dd></div><div><dt>Movimento líquido</dt><dd id="fin-metric-net"></dd></div><div><dt>Taxas (incluídas nas saídas)</dt><dd id="fin-metric-fees"></dd></div></dl><p id="fin-charts-status" role="status"></p><div id="fin-charts" class="fin-charts" hidden>
   <section class="fin-chart"><h3>Evolução do saldo</h3><div id="fin-balance-chart"></div></section>
   <section class="fin-chart"><h3>Entradas e saídas por mês</h3><div class="fin-chart-legend"><span class="fin-income">Entradas</span><span class="fin-outflow">Saídas</span></div><div id="fin-flow-chart"></div></section>
   <section class="fin-chart"><h3>Taxas pagas por tipo</h3><div id="fin-fees-chart"></div></section>
@@ -1462,18 +1462,18 @@ async function refreshSummary(){
   const missing=files.length-reports.length;
   if(missing)summaryKey=null;
 
-  const latest=results[0];
-  const fileName=files[0].file.name;
-  if(latest.status==='fulfilled'){
-    const current=consolidateAsaas([latest.value]);
+  const latest=results.flatMap((result,index)=>result.status==='fulfilled'?[{report:result.value,name:files[index].file.name}]:[])
+    .sort((a,b)=>b.report.end-a.report.end||b.report.issued-a.report.issued)[0];
+  if(latest){
+    const current=consolidateAsaas([latest.report]);
     for(const [id,value] of Object.entries({opening:current.opening,closing:current.closing,incoming:current.incoming,
       outgoing:current.outgoing,net:current.incoming-current.outgoing,fees:current.fees})){
       $('fin-metric-'+id).textContent=summaryMoney.format(value/100);
     }
-    message.textContent=['Data final do último extrato: '+formatDay(current.end),fileName,current.count+' movimentações'].join(' · ');
+    message.textContent=['Data final do último extrato: '+formatDay(current.end),latest.name,current.count+' movimentações'].join(' · ');
     metrics.hidden=false;
   }else{
-    message.textContent=fileName+' · Não foi possível ler e conciliar o último extrato enviado.';
+    message.textContent='Não foi possível ler e conciliar os extratos selecionados.';
   }
 
   if(!reports.length)return;
