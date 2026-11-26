@@ -1470,7 +1470,7 @@ async function refreshSummary(){
       outgoing:current.outgoing,net:current.incoming-current.outgoing,fees:current.fees})){
       $('fin-metric-'+id).textContent=summaryMoney.format(value/100);
     }
-    message.textContent=[fileName,formatDay(current.start)+' a '+formatDay(current.end),current.count+' movimentações'].join(' · ');
+    message.textContent=['Data final do último extrato: '+formatDay(current.end),fileName,current.count+' movimentações'].join(' · ');
     metrics.hidden=false;
   }else{
     message.textContent=fileName+' · Não foi possível ler e conciliar o último extrato enviado.';
